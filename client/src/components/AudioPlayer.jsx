@@ -384,7 +384,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
               
               <button 
                 onClick={handlePlayPause}
-                className="w-10 h-10 rounded-full bg-gold-500 hover:bg-gold-400 text-black flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(179,140,38,0.35)] hover:scale-105 relative cursor-pointer group"
+                className="w-10 h-10 rounded-full bg-gold-500 hover:bg-gold-400 text-black flex items-center justify-center transition-all duration-300 shadow-[0_0_15px_rgba(37,99,235,0.35)] hover:scale-105 relative cursor-pointer group"
                 title={isPlaying ? "Pause" : "Play Preview"}
               >
                 <div className="absolute inset-0 rounded-full border border-black/10 scale-90"></div>
@@ -455,7 +455,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
                 }}
                 className="w-16 h-1 bg-neutral-800 accent-gold-500 rounded-full cursor-pointer opacity-40 group-hover/vol:opacity-100 transition-opacity"
                 style={{
-                  background: `linear-gradient(to right, #b38c26 ${(isMuted ? 0 : volume) * 100}%, #262626 ${(isMuted ? 0 : volume) * 100}%)`
+                  background: `linear-gradient(to right, #2563eb ${(isMuted ? 0 : volume) * 100}%, #262626 ${(isMuted ? 0 : volume) * 100}%)`
                 }}
               />
             </div>

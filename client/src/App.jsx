@@ -266,7 +266,7 @@ export default function App() {
   }, [currentSong, isPlaying]);
 
   return (
-    <div className="bg-white min-h-screen text-charcoal-900 font-sans overflow-x-hidden selection:bg-gold-500 selection:text-black">
+    <div className="bg-white min-h-screen text-charcoal-900 font-sans overflow-x-hidden selection:bg-gold-500 selection:text-white">
       
       {/* Luxury Brand Mouse Follower */}
       <CustomCursor />
@@ -351,22 +351,98 @@ export default function App() {
       })()}
 
       {/* Luxury Brand Editorial Footer */}
-      <footer className="bg-obsidian-950 border-t border-white/5 py-12 text-gray-500 text-xs">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="text-left">
-            <span className="font-serif text-gold-500 font-extrabold tracking-widest block text-sm uppercase">Midhun Saji Ram</span>
-            <span className="text-[10px] tracking-widest text-gray-400 mt-1 block">MUSIC DIRECTOR | SINGER</span>
-          </div>
+      <footer className="bg-cream-100 border-t border-cream-300/60 py-16 text-xs text-gray-500">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10">
           
-          <div className="flex items-center space-x-1 font-light tracking-wide text-[11px]">
+          {/* Brand Column */}
+          <div className="text-left flex flex-col justify-start">
+            <span className="font-serif text-charcoal-900 font-extrabold tracking-widest text-lg uppercase block">
+              Midhun Saji Ram
+            </span>
+            <span className="text-[9px] tracking-[0.25em] text-gold-600 font-bold mt-1 uppercase block">
+              Music Director & Artist
+            </span>
+            <p className="mt-4 text-gray-500 leading-relaxed font-light max-w-xs text-[11px]">
+              Weaving cinematic scores, independent records, and the musical legacy of Saji Ram into contemporary sonic worlds.
+            </p>
+          </div>
+
+          {/* Navigation Links Column */}
+          <div className="text-left">
+            <h4 className="text-[10px] uppercase tracking-[0.2em] text-charcoal-900 font-bold mb-4">Navigation</h4>
+            <ul className="space-y-2.5 font-medium text-[11px]">
+              <li>
+                <button onClick={() => navigate('/')} className="hover:text-gold-500 transition-colors cursor-pointer text-left">Home</button>
+              </li>
+              <li>
+                <button onClick={() => navigate('/about')} className="hover:text-gold-500 transition-colors cursor-pointer text-left">About & Timeline</button>
+              </li>
+              <li>
+                <button onClick={() => navigate('/works')} className="hover:text-gold-500 transition-colors cursor-pointer text-left">Compositions</button>
+              </li>
+              <li>
+                <button onClick={() => navigate('/blog')} className="hover:text-gold-500 transition-colors cursor-pointer text-left">Stories</button>
+              </li>
+              <li>
+                <button onClick={() => navigate('/gallery')} className="hover:text-gold-500 transition-colors cursor-pointer text-left">Gallery</button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Social Channels Column */}
+          <div className="text-left">
+            <h4 className="text-[10px] uppercase tracking-[0.2em] text-charcoal-900 font-bold mb-4">Connect</h4>
+            <ul className="space-y-2.5 font-medium text-[11px]">
+              <li>
+                <a href="https://spotify.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-500 transition-colors flex items-center gap-1.5">
+                  <span>Spotify Profile</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-500 transition-colors flex items-center gap-1.5">
+                  <span>YouTube Channel</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-500 transition-colors flex items-center gap-1.5">
+                  <span>Instagram</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-500 transition-colors flex items-center gap-1.5">
+                  <span>Facebook</span>
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Contact Details Column */}
+          <div className="text-left flex flex-col justify-start">
+            <h4 className="text-[10px] uppercase tracking-[0.2em] text-charcoal-900 font-bold mb-4">Inquiries</h4>
+            <p className="text-gray-600 font-light leading-relaxed mb-2 text-[11px]">
+              For scoring, composition, and performance bookings:
+            </p>
+            <a href="mailto:bookings@midhunsajiram.com" className="text-charcoal-900 font-semibold hover:text-gold-500 transition-colors text-[11px] block">
+              bookings@midhunsajiram.com
+            </a>
+            <span className="text-gray-400 text-[10px] mt-3 font-mono block">
+              Kochi, Kerala, India
+            </span>
+          </div>
+
+        </div>
+
+        {/* Bottom copyright stamp */}
+        <div className="max-w-7xl mx-auto px-6 border-t border-cream-300/40 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-gray-400">
+          <div className="flex items-center space-x-1">
             <span>&copy; {new Date().getFullYear()} Midhun Saji Ram. All Rights Reserved.</span>
           </div>
 
-          <div className="flex items-center space-x-1.5 text-[10px] uppercase tracking-widest text-gray-400 font-medium">
+          {/* <div className="flex items-center space-x-1.5 uppercase tracking-widest font-semibold text-gray-400">
             <span>Designed with</span>
             <Sparkles size={10} className="text-gold-500 animate-pulse" />
             <span>Passion for Music</span>
-          </div>
+          </div> */}
         </div>
       </footer>
 

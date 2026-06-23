@@ -7,7 +7,7 @@ export default function FatherLegacy({ onStoryClick }) {
     <section className="relative py-14 bg-[#111a2e] overflow-hidden text-white border-t border-white/5">
       
       {/* Background radial glow */}
-      <div className="absolute right-0 top-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.03)_0%,transparent_70%)] pointer-events-none" />
+      <div className="absolute right-0 top-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.03)_0%,transparent_70%)] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -94,7 +94,7 @@ export default function FatherLegacy({ onStoryClick }) {
         {[15, 28, 20, 35, 48, 55, 72, 60, 45, 38, 52, 68, 80, 92, 98, 85, 70, 52, 40, 25, 18, 32, 45, 58, 72, 85, 68, 50, 32, 18].map((h, i) => (
           <div 
             key={i} 
-            className="w-[1.5px] bg-[#b38c26] rounded-t-sm"
+            className="w-[1.5px] bg-[#2563eb] rounded-t-sm"
             style={{ 
               height: `${h * 0.72}px`, 
               opacity: 0.15 + (i % 4) * 0.15 

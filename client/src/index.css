@@ -2,42 +2,43 @@
 @import "tailwindcss";
 
 @theme {
-  --color-gold-50: #fefcf7;
-  --color-gold-100: #faf3d8;
-  --color-gold-200: #f3e2ac;
-  --color-gold-300: #ebd07b;
-  --color-gold-400: #dfb746;
-  --color-gold-500: #b38c26; /* Warm Luxury Gold */
-  --color-gold-600: #937119;
-  --color-gold-700: #755811;
-  --color-gold-800: #594109;
-  --color-gold-900: #3f2e04;
+  --color-gold-50: #f0f7ff;
+  --color-gold-100: #e0f2fe;
+  --color-gold-200: #bae6fd;
+  --color-gold-300: #7dd3fc;
+  --color-gold-400: #38bdf8;
+  --color-gold-500: #2563eb; /* Primary Electric Blue */
+  --color-gold-600: #1d4ed8;
+  --color-gold-700: #1e40af;
+  --color-gold-800: #1e3a8a;
+  --color-gold-900: #172554;
   
-  --color-cream-50: #fefefe;
-  --color-cream-100: #fafaf7;
-  --color-cream-200: #f9f6f0; /* Soft Linen base */
-  --color-cream-300: #f5f0e4;
-  --color-cream-400: #ebdcc9;
-  --color-cream-500: #e3d2bd;
-  --color-cream-600: #c6b299;
+  --color-cream-50: #ffffff;
+  --color-cream-100: #f8fafc;
+  --color-cream-200: #f1f5f9; /* Soft Slate Gray base */
+  --color-cream-300: #e2e8f0;
+  --color-cream-400: #cbd5e1;
+  --color-cream-500: #94a3b8;
+  --color-cream-600: #475569;
   
-  --color-navy-900: #111a2e; /* Deep Midnight Blue contrast */
-  --color-navy-800: #18243c;
-  --color-navy-950: #0a0f1d;
+  --color-navy-900: #0a0f1d; /* Deep Dark Slate Blue */
+  --color-navy-800: #0f172a;
+  --color-navy-950: #020617;
   
-  --color-charcoal-900: #1c2230; /* Dark editorial text */
-  --color-charcoal-800: #293145;
-  --color-charcoal-500: #5c677f;
+  --color-charcoal-900: #0f172a; /* Dark editorial text */
+  --color-charcoal-800: #1e293b;
+  --color-charcoal-50: #f8fafc;
+  --color-charcoal-500: #64748b;
 
   --font-serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
   --font-sans: "Inter", "Montserrat", system-ui, sans-serif;
   --font-script: "Alex Brush", cursive;
 }
 
-/* Custom Base Styles for Light Cream Linen Theme */
+/* Custom Base Styles for Light Slate/Blue Theme */
 :root {
-  background-color: #f9f6f0;
-  color: #1c2230;
+  background-color: #ffffff;
+  color: #0f172a;
   font-family: var(--font-sans);
   scroll-behavior: smooth;
 }
@@ -47,41 +48,45 @@ body {
   padding: 0;
   min-height: 100vh;
   overflow-x: hidden;
-  background-color: #f9f6f0;
-  color: #1c2230;
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
-/* Scrollbar styling - soft cream/gold */
+/* Scrollbar styling - clean slate/blue */
 ::-webkit-scrollbar {
   width: 7px;
 }
 ::-webkit-scrollbar-track {
-  background: #f9f6f0;
+  background: #ffffff;
 }
 ::-webkit-scrollbar-thumb {
-  background: #dfd7c6;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #b38c26;
+  background: #2563eb;
 }
 
-/* Editorial Light Glassmorphism */
+/* Premium iOS Glassmorphism (iPhone-like frosted effect) */
 .glass-premium {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .glass-dark {
-  background: #111a2e; /* Solid luxury midnight blue to prevent page bleed-through */
-  border-top: 1px solid rgba(179, 140, 38, 0.15);
+  background: rgba(10, 15, 29, 0.72);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Premium Gold Text Gradient for headings */
+/* Premium Blue Text Gradient for headings */
 .text-gold-gradient {
-  background: linear-gradient(135deg, #a67c1e 0%, #d4af37 50%, #85610d 100__);
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 50%, #1e40af 100__);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -89,8 +94,8 @@ body {
 
 /* Interactive modern hover shadow */
 .glow-gold-hover:hover {
-  box-shadow: 0 12px 30px rgba(28, 34, 48, 0.04);
-  border-color: #b38c26;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+  border-color: #2563eb;
   transition: all 0.4s ease;
 }
 
@@ -105,11 +110,11 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  color: #D4AF37;
+  color: #000000;
   font-family: var(--font-serif);
   font-size: 1.25rem;
   font-weight: bold;
-  text-shadow: 0 0 10px rgba(212, 175, 55, 0.6), 0 0 20px rgba(212, 175, 55, 0.3);
+  text-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
   pointer-events: none;
   z-index: 10000;
   will-change: transform, opacity;
@@ -119,7 +124,7 @@ body {
   display: inline-block;
   width: 3px;
   height: 2px;
-  background-color: #b38c26;
+  background-color: #2563eb;
   margin: 0 1px;
   border-radius: 1px;
 }
@@ -143,7 +148,7 @@ body {
   background: linear-gradient(
     to right,
     rgba(255, 255, 255, 0) 0%,
-    rgba(179, 140, 38, 0.05) 50%,
+    rgba(37, 99, 235, 0.08) 50%,
     rgba(255, 255, 255, 0) 100%
   );
   transform: skewX(-25deg);

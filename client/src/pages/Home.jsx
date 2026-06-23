@@ -8,6 +8,7 @@ import GallerySection from '../components/GallerySection';
 import BlogSection from '../components/BlogSection';
 import ContactForm from '../components/ContactForm';
 import ScrollReveal from '../components/ScrollReveal';
+import FaqRiderSection from '../components/FaqRiderSection';
 
 export default function Home({ 
   songs, 
@@ -88,7 +89,10 @@ export default function Home({
 
       {/* 6. Photo Masonry Gallery */}
       <ScrollReveal>
-        <GallerySection galleryItems={gallery} />
+        <GallerySection 
+          galleryItems={gallery.slice(0, 6)} 
+          onViewAllClick={() => navigate('/gallery')}
+        />
       </ScrollReveal>
 
       <hr className="border-t border-cream-300/60 mx-auto max-w-7xl" />
@@ -100,7 +104,14 @@ export default function Home({
 
       <hr className="border-t border-cream-300/60 mx-auto max-w-7xl" />
 
-      {/* 8. Booking Contact Form */}
+      {/* 8. FAQ & Artist Rider Section */}
+      <ScrollReveal>
+        <FaqRiderSection />
+      </ScrollReveal>
+
+      <hr className="border-t border-cream-300/60 mx-auto max-w-7xl" />
+
+      {/* 9. Booking Contact Form */}
       <ScrollReveal>
         <ContactForm />
       </ScrollReveal>

@@ -36,19 +36,11 @@ const CustomCursor = () => {
       if (target) {
         if (!isHovering.current) {
           isHovering.current = true;
-          if (cursorOutlineRef.current) {
-            cursorOutlineRef.current.classList.add('border-[#D4AF37]', 'bg-[#D4AF37]/10');
-            cursorOutlineRef.current.classList.remove('border-white/25');
-          }
           spawnParticles(x, y);
         }
       } else {
         if (isHovering.current) {
           isHovering.current = false;
-          if (cursorOutlineRef.current) {
-            cursorOutlineRef.current.classList.remove('border-[#D4AF37]', 'bg-[#D4AF37]/10');
-            cursorOutlineRef.current.classList.add('border-white/25');
-          }
         }
       }
     };
@@ -108,6 +100,15 @@ const CustomCursor = () => {
       if (cursorOutlineRef.current) {
         cursorOutlineRef.current.style.transform = `translate(${outline.current.x}px, ${outline.current.y}px) translate(-50%, -50%) scale(${currentScale.current})`;
         cursorOutlineRef.current.style.opacity = targetOpacity;
+        
+        // Inline styles bypass Tailwind build-time purge/compilation dynamic class bugs entirely
+        if (isHovering.current) {
+          cursorOutlineRef.current.style.borderColor = '#000000';
+          cursorOutlineRef.current.style.backgroundColor = 'rgba(0, 0, 0, 0.08)';
+        } else {
+          cursorOutlineRef.current.style.borderColor = 'rgba(0, 0, 0, 0.35)';
+          cursorOutlineRef.current.style.backgroundColor = 'transparent';
+        }
       }
       
       // Update particles
@@ -188,16 +189,17 @@ const CustomCursor = () => {
   };
 
   return (
-    <div className="custom-cursor-container z-[9999] pointer-events-none fixed top-0 left-0 w-full h-full overflow-hidden mix-blend-difference">
+    <div className="custom-cursor-container z-[9999] pointer-events-none fixed top-0 left-0 w-full h-full overflow-hidden">
       <div ref={particlesContainerRef} className="particles-container absolute top-0 left-0 w-full h-full pointer-events-none" />
       <div 
         ref={cursorOutlineRef} 
-        className="cursor-outline absolute top-0 left-0 w-10 h-10 border border-white/25 rounded-full pointer-events-none transition-colors duration-300 backdrop-blur-[2px]"
+        className="cursor-outline absolute top-0 left-0 w-10 h-10 border rounded-full pointer-events-none transition-colors duration-300 backdrop-blur-[0.5px]"
+        style={{ borderColor: 'rgba(0, 0, 0, 0.25)', backgroundColor: 'transparent', boxShadow: '0 0 2px rgba(255, 255, 255, 0.4)' }}
       />
       <div 
         ref={cursorDotRef} 
-        className="cursor-dot absolute top-0 left-0 w-1.5 h-1.5 bg-[#D4AF37] rounded-full pointer-events-none"
-        style={{ boxShadow: '0 0 10px rgba(212, 175, 55, 0.8)' }}
+        className="cursor-dot absolute top-0 left-0 w-1.5 h-1.5 bg-black rounded-full pointer-events-none border border-white/20"
+        style={{ backgroundColor: '#000000', boxShadow: '0 0 4px rgba(255, 255, 255, 0.5)' }}
       />
     </div>
   );

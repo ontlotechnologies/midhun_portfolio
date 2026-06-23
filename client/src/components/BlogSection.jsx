@@ -29,15 +29,13 @@ export default function BlogSection({ blogs }) {
             return (
               <motion.div
                 key={blog._id}
-                initial={{ opacity: 0, x: slideX, y: 40, rotate: rotateVal, scale: 0.94 }}
-                whileInView={{ opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }}
+                initial={{ opacity: 0, x: slideX, y: 40, rotate: rotateVal }}
+                whileInView={{ opacity: 1, x: 0, y: 0, rotate: 0 }}
                 viewport={{ once: false, amount: 0.05 }}
                 whileHover={{ 
-                  y: -12, 
-                  scale: 1.02,
-                  boxShadow: "0 25px 50px -12px rgba(179, 140, 38, 0.15)"
+                  boxShadow: "0 25px 50px -12px rgba(37, 99, 235, 0.15)"
                 }}
-                whileTap={{ scale: 0.98 }}
+                whileTap={{}}
                 transition={{ 
                   type: "spring",
                   stiffness: 70,
@@ -52,7 +50,7 @@ export default function BlogSection({ blogs }) {
                 <img 
                   src={blog.coverUrl} 
                   alt={blog.title} 
-                  className="w-full h-full object-cover filter brightness-95 group-hover:brightness-100 hover:scale-105  transition-all duration-700"
+                  className="w-full h-full object-cover filter brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-700"
                 />
                 <span className="absolute top-3 left-3 bg-charcoal-900 border border-gold-500/20 text-gold-500 text-[8px] uppercase tracking-widest px-2.5 py-1 rounded-full font-bold">
                   {blog.category}

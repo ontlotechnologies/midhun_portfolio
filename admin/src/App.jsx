@@ -1164,11 +1164,11 @@ export default function App() {
         {/* Footer */}
         <footer className="h-12 border-t border-white/5 px-8 flex items-center justify-between text-[10px] text-gray-500 bg-obsidian-900/10">
           <span>&copy; {new Date().getFullYear()} Midhun Saji Ram. All Rights Reserved.</span>
-          <div className="flex items-center space-x-1">
+          {/* <div className="flex items-center space-x-1">
             <span>Designed with</span>
             <Heart size={9} className="text-gold-500 fill-gold-500 animate-pulse" />
             <span>Passion for Music</span>
-          </div>
+          </div> */}
         </footer>
 
       </main>

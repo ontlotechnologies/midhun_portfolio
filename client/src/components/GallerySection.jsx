@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function GallerySection({ galleryItems = [] }) {
+export default function GallerySection({ galleryItems = [], onViewAllClick }) {
   const [activeCategory, setActiveCategory] = useState('All');
   const [selectedIdx, setSelectedIdx] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
 
   const categories = ['All', 'Concerts', 'Studio', 'Personal'];
 
@@ -14,14 +12,21 @@ export default function GallerySection({ galleryItems = [] }) {
     ? galleryItems
     : galleryItems.filter(item => item.category.toLowerCase() === activeCategory.toLowerCase());
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
-
-  const handleCategoryChange = (cat) => {
-    setActiveCategory(cat);
-    setCurrentPage(1);
+  // Asymmetric Bento Grid layout spans modulo mapping
+  const getBentoClasses = (index) => {
+    const layouts = [
+      'col-span-2 row-span-2', // Large Square (2x2)
+      'col-span-1 row-span-2', // Tall Vertical (1x2)
+      'col-span-1 row-span-1', // Small Square (1x1)
+      'col-span-1 row-span-1', // Small Square (1x1)
+      'col-span-2 row-span-1', // Wide Horizontal (2x1)
+      'col-span-1 row-span-2', // Tall Vertical (1x2)
+      'col-span-2 row-span-2', // Large Square (2x2)
+      'col-span-1 row-span-1', // Small Square (1x1)
+      'col-span-1 row-span-1', // Small Square (1x1)
+      'col-span-2 row-span-1', // Wide Horizontal (2x1)
+    ];
+    return layouts[index % layouts.length];
   };
 
   const handleNext = (e) => {
@@ -37,6 +42,9 @@ export default function GallerySection({ galleryItems = [] }) {
   return (
     <section id="gallery" className="relative py-14 bg-white overflow-hidden">
       
+      {/* Background subtle radial glow */}
+      <div className="absolute right-0 top-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,rgba(37,99,235,0.01)_0%,transparent_70%)] pointer-events-none" />
+
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
         {/* Section Header */}
@@ -56,8 +64,8 @@ export default function GallerySection({ galleryItems = [] }) {
             {categories.map((cat) => (
               <button
                 key={cat}
-                onClick={() => handleCategoryChange(cat)}
-                className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-all duration-300 relative font-semibold ${activeCategory === cat ? 'text-gold-600' : 'text-gray-500 hover:text-charcoal-900'}`}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-3 py-1.5 text-xs uppercase tracking-widest transition-all duration-300 relative font-semibold cursor-pointer ${activeCategory === cat ? 'text-gold-600' : 'text-gray-500 hover:text-charcoal-900'}`}
               >
                 {cat}
                 {activeCategory === cat && (
@@ -71,53 +79,43 @@ export default function GallerySection({ galleryItems = [] }) {
           </div>
         </div>
 
-        {/* Gallery Grid (Displays 5 columns on large screen to match reference image horizontal strip) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+        {/* Bento Grid layout container */}
+        <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[140px] md:auto-rows-[190px] gap-4 grid-flow-row-dense">
           <AnimatePresence mode="popLayout">
-            {paginatedItems.map((item, idx) => {
-              const globalIdx = startIndex + idx;
-              const slideX = idx % 2 === 0 ? -30 : 30;
-              const rotateVal = idx % 2 === 0 ? -2 : 2;
+            {filteredItems.map((item, idx) => {
+              const bentoSpanClass = getBentoClasses(idx);
               return (
                 <motion.div
                   layout
-                  initial={{ opacity: 0, x: slideX, y: 30, rotate: rotateVal, scale: 0.95 }}
-                  whileInView={{ opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }}
-                  viewport={{ once: false, amount: 0.05 }}
-                  whileHover={{ 
-                    y: -6, 
-                    scale: 1.02,
-                    boxShadow: "0 15px 30px -10px rgba(179, 140, 38, 0.15)"
-                  }}
-                  whileTap={{ scale: 0.98 }}
-                  exit={{ opacity: 0, x: slideX, rotate: rotateVal, scale: 0.95 }}
-                  transition={{ 
-                    type: "spring",
-                    stiffness: 90,
-                    damping: 15,
-                    mass: 0.7,
-                    delay: (idx % 5) * 0.06
-                  }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ type: "spring", stiffness: 90, damping: 15 }}
                   key={item._id}
-                  onClick={() => setSelectedIdx(globalIdx)}
-                  className="relative aspect-[3/4] rounded overflow-hidden border border-cream-300 shadow-sm cursor-pointer group hover:border-gold-500/30"
+                  onClick={() => setSelectedIdx(idx)}
+                  className={`${bentoSpanClass} relative rounded-xl overflow-hidden border border-cream-300 shadow-sm group cursor-pointer bg-white hover:border-gold-500/25 transition-all duration-300 hover:shadow-md`}
                 >
-                  {/* Image */}
+                  {/* Image (no scale on card container, only scale inside element) */}
                   <img 
                     src={item.url} 
                     alt={item.title} 
-                    className="w-full h-full object-cover filter brightness-95 group-hover:brightness-100 group-hover:scale-105 transition-all duration-700"
+                    className="w-full h-full object-cover filter brightness-[0.96] group-hover:brightness-100 group-hover:scale-105 transition-transform duration-700 pointer-events-none"
                   />
 
-                  {/* Dark Hover overlay */}
-                  <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
-                    <ZoomIn className="text-gold-500 mb-1" size={16} />
-                    <h3 className="font-serif text-white font-bold text-xs tracking-wide">
+                  {/* Dark/Blur overlay on hover */}
+                  <div className="absolute inset-0 bg-charcoal-900/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  {/* Frosted iPhone Glassmorphism Overlay (Bottom Slide) */}
+                  <div className="absolute inset-x-3 bottom-3 p-3.5 rounded-xl glass-premium border border-white/30 shadow-[0_8px_32px_0_rgba(0,0,0,0.08)] transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 text-left">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[8px] text-gold-600 uppercase tracking-widest font-extrabold">
+                        {item.category}
+                      </span>
+                      <ZoomIn className="text-gold-500" size={13} />
+                    </div>
+                    <h3 className="font-serif text-charcoal-900 font-bold text-xs leading-snug">
                       {item.title}
                     </h3>
-                    <p className="text-[8px] text-gold-500 uppercase tracking-widest mt-0.5 font-bold">
-                      {item.category}
-                    </p>
                   </div>
                 </motion.div>
               );
@@ -125,45 +123,14 @@ export default function GallerySection({ galleryItems = [] }) {
           </AnimatePresence>
         </div>
 
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center space-x-2 mt-8">
+        {onViewAllClick && (
+          <div className="text-center mt-10">
             <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className={`p-2 rounded border border-cream-300 text-charcoal-900 transition-all duration-300 cursor-pointer ${
-                currentPage === 1
-                  ? 'opacity-40 cursor-not-allowed'
-                  : 'hover:border-gold-500 hover:text-gold-600 bg-white hover:bg-cream-50'
-              }`}
+              onClick={onViewAllClick}
+              className="px-8 py-3 bg-charcoal-900 hover:bg-gold-500 text-white hover:text-white font-semibold text-[10px] uppercase tracking-widest rounded-full transition-all duration-300 shadow-sm cursor-pointer inline-flex items-center gap-2 group"
             >
-              <ChevronLeft size={16} />
-            </button>
-
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3.5 py-1.5 text-xs font-semibold rounded border transition-all duration-300 cursor-pointer ${
-                  currentPage === page
-                    ? 'bg-gold-500 border-gold-500 text-white shadow-sm'
-                    : 'border-cream-300 text-charcoal-900 bg-white hover:bg-cream-50 hover:border-gold-500'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              className={`p-2 rounded border border-cream-300 text-charcoal-900 transition-all duration-300 cursor-pointer ${
-                currentPage === totalPages
-                  ? 'opacity-40 cursor-not-allowed'
-                  : 'hover:border-gold-500 hover:text-gold-600 bg-white hover:bg-cream-50'
-              }`}
-            >
-              <ChevronRight size={16} />
+              <span>View All Gallery</span>
+              <span className="group-hover:translate-x-1.5 transition-transform duration-300">&rarr;</span>
             </button>
           </div>
         )}

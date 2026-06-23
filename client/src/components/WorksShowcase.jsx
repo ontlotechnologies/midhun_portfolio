@@ -69,17 +69,15 @@ export default function WorksShowcase({ songs, currentSong, isPlaying, onSongSel
 
               return (
                 <motion.div
-                  layout
-                  initial={{ opacity: 0, x: slideX, y: 30, rotate: rotateVal, scale: 0.95 }}
-                  whileInView={{ opacity: 1, x: 0, y: 0, rotate: 0, scale: 1 }}
+                  layout="position"
+                  initial={{ opacity: 0, x: slideX, y: 30, rotate: rotateVal }}
+                  whileInView={{ opacity: 1, x: 0, y: 0, rotate: 0 }}
                   viewport={{ once: false, amount: 0.05 }}
                   whileHover={{ 
-                    y: -8, 
-                    scale: 1.02,
-                    boxShadow: "0 15px 30px -10px rgba(179, 140, 38, 0.12)"
+                    boxShadow: "0 15px 30px -10px rgba(37, 99, 235, 0.12)"
                   }}
-                  whileTap={{ scale: 0.98 }}
-                  exit={{ opacity: 0, x: slideX, rotate: rotateVal, scale: 0.95 }}
+                  whileTap={{}}
+                  exit={{ opacity: 0, x: slideX, rotate: rotateVal }}
                   transition={{ 
                     type: "spring",
                     stiffness: 80,

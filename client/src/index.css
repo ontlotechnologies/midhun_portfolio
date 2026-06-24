@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -32,6 +32,7 @@
 
   --font-serif: "Cormorant Garamond", "Playfair Display", Georgia, serif;
   --font-sans: "Inter", "Montserrat", system-ui, sans-serif;
+  --font-outfit: "Outfit", sans-serif;
   --font-script: "Alex Brush", cursive;
 }
 
@@ -99,12 +100,6 @@ body {
   transition: all 0.4s ease;
 }
 
-/* Premium Interactive Cursor */
-@media (pointer: fine) {
-  body, a, button, input, select, textarea, .cursor-pointer, .interactive, img, .card {
-    cursor: none !important;
-  }
-}
 
 .music-particle {
   position: absolute;
@@ -178,4 +173,18 @@ html.lenis, html.lenis body {
 
 .lenis-scrolling iframe {
   pointer-events: none;
+}
+
+/* Hide scrollbar for carousels and lists */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Vinyl disc slow rotation for audio components */
+.animate-spin-slow {
+  animation: spin 10s linear infinite;
 }

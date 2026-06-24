@@ -1,7 +1,100 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 
-export default function TimelineSection({ timelineData, onActionClick }) {
+export default function TimelineSection({ timelineData, onActionClick, loading }) {
+  const containerRef = useRef(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start center", "end center"]
+  });
+
+  const scaleY = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+  const height = useTransform(scaleY, [0, 1], ["0%", "100%"]);
+  const noteOpacity = useTransform(scaleY, [0, 0.05], [0, 1]);
+
+  if (loading) {
+    return (
+      <section id="timeline" className="relative py-14 bg-white overflow-hidden animate-pulse">
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            
+            {/* Left Static Column */}
+            <div className="lg:col-span-4 text-left flex flex-col justify-center">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-gold-600 font-bold block mb-2">
+                THE JOURNEY
+              </span>
+              <h2 className="font-serif text-3.5xl md:text-4xl font-bold tracking-tight text-charcoal-900 mb-2 leading-tight">
+                From a Home Filled with Music to a World that Listens
+              </h2>
+              <svg className="w-16 h-3 text-gold-500/50 mb-6" viewBox="0 0 100 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2,6 C15,2 25,10 40,6 C55,2 65,10 80,6 C90,4 95,6 98,6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" fill="none" />
+              </svg>
+              <p className="text-charcoal-800 text-xs md:text-sm font-light leading-relaxed max-w-sm mb-6">
+                Born into a home where music wasn't just heard — it was lived. From the first note I heard to the stages I dream today, every moment has been a part of a beautiful journey.
+              </p>
+              <div className="w-32 h-10 bg-cream-200 rounded-full" />
+            </div>
+
+            {/* Right Cards Static Grid Column */}
+            <div className="lg:col-span-8 relative mt-6 lg:mt-0">
+              <div className="relative w-full">
+                
+                {/* Horizontal timeline dotted line (visible on desktop lg) */}
+                <div className="hidden lg:block absolute left-8 right-8 h-[1px] border-t border-dashed border-black/20 bottom-[14px] z-0" />
+
+                {/* Desktop View */}
+                <div className="hidden lg:grid lg:grid-cols-4 gap-4 relative z-10 w-full">
+                  {[1, 2, 3, 4].map((idx) => (
+                    <div key={idx} className="flex flex-col items-center w-full">
+                      <div className="bg-white border border-cream-300 rounded overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.02)] flex-1 flex flex-col w-full">
+                        <div className="w-full aspect-[4/3] bg-cream-200" />
+                        <div className="p-4 flex-1 flex flex-col justify-start text-left space-y-2">
+                          <div className="h-3.5 bg-cream-200 rounded w-1/3" />
+                          <div className="h-4 bg-cream-200 rounded w-5/6" />
+                          <div className="h-2.5 bg-cream-200 rounded w-full" />
+                        </div>
+                      </div>
+                      <div className="hidden lg:block h-6 w-[1px] border-l border-dashed border-black/20 relative z-10 mt-3" />
+                      <div className="hidden lg:flex w-2.5 h-2.5 rounded-full border border-black bg-white items-center justify-center relative z-20">
+                        <div className="w-1 h-1 bg-black rounded-full" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Mobile View */}
+                <div className="relative lg:hidden text-left pl-10 pr-2 space-y-6">
+                  <div className="absolute left-[18px] top-2 bottom-8 w-[1px] border-l border-dashed border-black/20 z-0" />
+                  {[1, 2, 3, 4].map((idx) => (
+                    <div
+                      key={idx}
+                      className="relative flex flex-col sm:flex-row gap-4 items-start bg-white border border-cream-300 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.01)]"
+                    >
+                      <div className="absolute left-[-30px] top-[24px] w-4 h-4 rounded-full border border-black bg-white flex items-center justify-center z-20">
+                        <div className="w-1.5 h-1.5 bg-black rounded-full" />
+                      </div>
+                      <div className="w-full sm:w-28 aspect-[4/3] rounded-lg overflow-hidden bg-cream-200 flex-shrink-0" />
+                      <div className="flex-1 flex flex-col justify-start space-y-2 w-full">
+                        <div className="h-3.5 bg-cream-200 rounded w-16" />
+                        <div className="h-4 bg-cream-200 rounded w-1/2" />
+                        <div className="h-3 bg-cream-200 rounded w-5/6" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+    );
+  }
   const defaultEvents = [
     { 
       year: '1998', 
@@ -85,9 +178,10 @@ export default function TimelineSection({ timelineData, onActionClick }) {
             <div className="relative w-full">
               
               {/* Horizontal Timeline Dotted Line (visible on desktop lg) */}
-              <div className="hidden lg:block absolute left-8 right-8 h-[1px] border-t border-dashed border-gold-500/20 bottom-[14px] z-0" />
+              <div className="hidden lg:block absolute left-8 right-8 h-[1px] border-t border-dashed border-black/20 bottom-[14px] z-0" />
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-10 w-full">
+              {/* Desktop View (Visible on lg screens and above) */}
+              <div className="hidden lg:grid lg:grid-cols-4 gap-4 relative z-10 w-full">
                 {events.map((event, index) => {
                   const eventImg = event.image || event.coverUrl || fallbacks[index % fallbacks.length];
                   const slideX = index % 2 === 0 ? -30 : 30;
@@ -98,7 +192,7 @@ export default function TimelineSection({ timelineData, onActionClick }) {
                       key={event._id || index}
                       initial={{ opacity: 0, x: slideX, y: 30, rotate: rotateVal }}
                       whileInView={{ opacity: 1, x: 0, y: 0, rotate: 0 }}
-                      viewport={{ once: false, amount: 0.05 }}
+                      viewport={{ once: true, amount: 0.05 }}
                       whileHover={{ 
                         boxShadow: "0 15px 30px -10px rgba(37, 99, 235, 0.12)"
                       }}
@@ -138,16 +232,79 @@ export default function TimelineSection({ timelineData, onActionClick }) {
                       </div>
 
                       {/* Vertical connector line (visible on desktop lg) */}
-                      <div className="hidden lg:block h-6 w-[1px] border-l border-dashed border-gold-500/20 relative z-10 mt-3"></div>
+                      <div className="hidden lg:block h-6 w-[1px] border-l border-dashed border-black/20 relative z-10 mt-3"></div>
 
                       {/* Circle node dot (visible on desktop lg) */}
-                      <div className="hidden lg:flex w-2.5 h-2.5 rounded-full border border-gold-500 bg-white items-center justify-center relative z-20 group-hover:bg-gold-500 transition-colors duration-300 shadow-[0_0_8px_rgba(37, 99, 235, 0.2)]">
-                        <div className="w-1 h-1 bg-gold-500 rounded-full group-hover:bg-white transition-colors duration-300" />
+                      <div className="hidden lg:flex w-2.5 h-2.5 rounded-full border border-black bg-white items-center justify-center relative z-20 group-hover:bg-black transition-colors duration-300 shadow-[0_0_8px_rgba(0,0,0,0.15)]">
+                        <div className="w-1 h-1 bg-black rounded-full group-hover:bg-white transition-colors duration-300" />
                       </div>
 
                     </motion.div>
                   );
                 })}
+              </div>
+
+              {/* Mobile/Tablet Vertical Roadmap View (Visible below lg screens) */}
+              <div ref={containerRef} className="relative lg:hidden text-left pl-10 pr-2">
+                {/* Vertical Dashed Line */}
+                <div className="absolute left-[18px] top-2 bottom-8 w-[1px] border-l border-dashed border-black/20 z-0" />
+                
+                {/* Active progress line that fills on scroll */}
+                <motion.div 
+                  className="absolute left-[18px] top-2 bottom-8 w-[2px] bg-black z-0 origin-top shadow-[0_0_8px_rgba(0,0,0,0.25),0_0_12px_rgba(0,0,0,0.15)]"
+                  style={{ height }}
+                >
+                  {/* Music Note Symbol at the end of the vertical line */}
+                  <motion.div 
+                    className="absolute bottom-[-10px] left-[-6px] text-black drop-shadow-[0_0_4px_rgba(0,0,0,0.3)] text-[10px] font-bold"
+                    style={{ opacity: noteOpacity }}
+                  >
+                    🎵
+                  </motion.div>
+                </motion.div>
+
+                <div className="space-y-6 relative z-10">
+                  {events.map((event, index) => {
+                    const eventImg = event.image || event.coverUrl || fallbacks[index % fallbacks.length];
+                    return (
+                      <motion.div
+                        key={event._id || index}
+                        initial={{ opacity: 0.25, y: 25, filter: "grayscale(80%) blur(0.5px)" }}
+                        whileInView={{ opacity: 1, y: 0, filter: "grayscale(0%) blur(0px)" }}
+                        viewport={{ once: false, amount: 0.3 }}
+                        transition={{ duration: 0.45 }}
+                        className="relative flex flex-col sm:flex-row gap-4 items-start bg-white border border-cream-300 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.01)] hover:border-gold-500/20 transition-all duration-300"
+                      >
+                        {/* Timeline Circle Node Dot */}
+                        <div className="absolute left-[-30px] top-[24px] w-4 h-4 rounded-full border border-black bg-white flex items-center justify-center z-20">
+                          <div className="w-1.5 h-1.5 bg-black rounded-full animate-pulse" />
+                        </div>
+                        
+                        {/* Image */}
+                        <div className="w-full sm:w-28 aspect-[4/3] rounded-lg overflow-hidden flex-shrink-0 bg-neutral-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                          <img 
+                            src={eventImg} 
+                            alt={event.title} 
+                            className="w-full h-full object-cover filter sepia-[0.25] brightness-[0.95]"
+                          />
+                        </div>
+                        
+                        {/* Content text */}
+                        <div className="flex-1 flex flex-col justify-start">
+                          <span className="font-sans text-[11px] font-bold text-gold-600 tracking-wider block mb-1">
+                            {event.year}
+                          </span>
+                          <h3 className="font-sans text-charcoal-900 font-bold text-[14px] leading-snug mb-1">
+                            {event.title}
+                          </h3>
+                          <p className="text-xs text-gray-500 font-light leading-relaxed">
+                            {event.description}
+                          </p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </div>
 
             </div>

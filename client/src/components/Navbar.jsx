@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { FaInstagram, FaYoutube, FaSpotify } from 'react-icons/fa';
 
-export default function Navbar({ activeSection, setActiveSection, currentPath, navigate }) {
+export default function Navbar({ activeSection, setActiveSection, currentPath, navigate, onSelectCategory }) {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -23,9 +24,12 @@ export default function Navbar({ activeSection, setActiveSection, currentPath, n
     { id: 'contact', label: 'Contact', path: '/contact' }
   ];
 
-  const handleNavClick = (path) => {
+  const handleNavClick = (link) => {
     setIsOpen(false);
-    navigate(path);
+    if (link.id === 'works' && onSelectCategory) {
+      onSelectCategory('audio');
+    }
+    navigate(link.path);
   };
 
   const showSolidNavbar = scrolled || currentPath !== '/';
@@ -58,10 +62,11 @@ export default function Navbar({ activeSection, setActiveSection, currentPath, n
         <div className="hidden lg:flex items-center space-x-7">
           {navLinks.map((link) => {
             const isCurrent = currentPath === link.path;
+            
             return (
               <button
                 key={link.id}
-                onClick={() => handleNavClick(link.path)}
+                onClick={() => handleNavClick(link)}
                 className={`text-[10px] uppercase tracking-widest transition-colors duration-300 font-bold relative py-1 group ${isCurrent ? 'text-charcoal-900' : 'text-charcoal-900/60 hover:text-charcoal-900'}`}
               >
                 {link.label}
@@ -80,38 +85,79 @@ export default function Navbar({ activeSection, setActiveSection, currentPath, n
           </div>
 
           <button 
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => setIsOpen(true)}
             className={`lg:hidden transition-colors duration-300 hover:text-gold-500 cursor-pointer ${showSolidNavbar ? 'text-charcoal-900' : 'text-white'}`}
-            aria-label="Toggle menu"
+            aria-label="Open menu"
           >
-            {isOpen ? <X size={22} /> : <Menu size={22} />}
+            <Menu size={22} />
           </button>
         </div>
       </div>
 
       {/* Drawer Menu (Global overlay) */}
-      {isOpen && (
-        <div className="lg:hidden fixed inset-0 top-[60px] bg-white/98 backdrop-blur-xl z-40 transition-all duration-300 flex flex-col items-center justify-center space-y-8 animate-fade-in border-t border-gold-600/10">
-          {navLinks.map((link) => {
-            const isCurrent = currentPath === link.path;
-            return (
-              <button
-                key={link.id}
-                onClick={() => handleNavClick(link.path)}
-                className={`text-lg uppercase tracking-widest transition-colors duration-300 font-serif ${isCurrent ? 'text-gold-600 font-bold' : 'text-charcoal-900 hover:text-gold-600'}`}
-              >
-                {link.label}
-              </button>
-            );
-          })}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            {/* Backdrop Blur Overlay */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
+            />
 
-          <div className="flex space-x-6 text-charcoal-900 pt-6">
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-600 transition-colors duration-300"><FaInstagram size={22} /></a>
-            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-600 transition-colors duration-300"><FaYoutube size={22} /></a>
-            <a href="https://spotify.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-600 transition-colors duration-300"><FaSpotify size={22} /></a>
-          </div>
-        </div>
-      )}
+            {/* Slide-in Drawer from Right to Left */}
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'tween', duration: 0.3, ease: 'easeOut' }}
+              className="lg:hidden fixed top-0 right-0 h-screen w-[280px] bg-white z-50 shadow-2xl border-l border-cream-300/40 p-6 flex flex-col"
+            >
+              {/* Drawer Header with Close Button */}
+              <div className="flex items-center justify-between mb-8 pb-4 border-b border-cream-300/40">
+                <span className="font-serif font-extrabold tracking-widest text-sm uppercase text-charcoal-900">Menu</span>
+                <button 
+                  onClick={() => setIsOpen(false)}
+                  className="text-charcoal-900 hover:text-gold-500 transition-colors cursor-pointer"
+                  aria-label="Close menu"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Navigation Links */}
+              <div className="flex flex-col space-y-4 text-left">
+                {navLinks.map((link) => {
+                  const isCurrent = currentPath === link.path;
+                  
+                  return (
+                    <button
+                      key={link.id}
+                      onClick={() => handleNavClick(link)}
+                      className={`text-left text-sm uppercase tracking-widest transition-colors duration-300 font-serif border-b border-cream-300/20 pb-2 ${
+                        isCurrent 
+                          ? 'text-gold-600 font-bold' 
+                          : 'text-charcoal-900/80 hover:text-gold-600'
+                      }`}
+                    >
+                      {link.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Social Channels */}
+              <div className="mt-auto pt-6 border-t border-cream-300/40 flex justify-center space-x-6 text-charcoal-900">
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-600 transition-colors duration-300"><FaInstagram size={20} /></a>
+                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-600 transition-colors duration-300"><FaYoutube size={20} /></a>
+                <a href="https://spotify.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-600 transition-colors duration-300"><FaSpotify size={20} /></a>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

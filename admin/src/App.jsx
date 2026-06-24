@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   LogIn, LogOut, Disc, FileText, Image, Calendar, Mail, BarChart3, 
   Plus, Trash2, CheckCircle2, Lock, Settings, Play, Pause, 
-  Users, Award, Video, MessageSquare, Search, Bell, ChevronDown, Heart, Sparkles
+  Users, Award, Video, Film, MessageSquare, Search, Bell, ChevronDown, Heart, Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -23,6 +23,7 @@ export default function App() {
     blogs: 16,
     galleryItems: 28,
     timelineEvents: 14,
+    mediaWorks: 0,
     totalMessages: 46,
     unreadMessages: 12
   });
@@ -33,12 +34,26 @@ export default function App() {
   const [gallery, setGallery] = useState([]);
   const [timeline, setTimeline] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [mediaWorks, setMediaWorks] = useState([]);
 
   // Create Form States
   const [songForm, setSongForm] = useState({ title: '', category: 'Single', coverUrl: '', audioUrl: '', spotifyUrl: '', description: '', isFeatured: false });
   const [blogForm, setBlogForm] = useState({ title: '', category: 'Reflection', coverUrl: '', excerpt: '', content: '', readingTime: '4 mins', isPublished: true });
   const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'image', category: 'Concerts', isFeatured: false });
   const [timelineForm, setTimelineForm] = useState({ year: '', title: '', description: '' });
+  const [mediaWorkForm, setMediaWorkForm] = useState({
+    title: '',
+    type: 'short_film',
+    coverUrl: '',
+    videoUrl: '',
+    audioUrl: '',
+    mediaType: 'youtube',
+    releaseYear: '',
+    description: '',
+    isFeatured: false
+  });
+
+  const [independentSubtype, setIndependentSubtype] = useState('video');
 
   // Player Preview States inside Dashboard Sidebar
   const [sidebarPlaying, setSidebarPlaying] = useState(false);
@@ -65,20 +80,13 @@ export default function App() {
           blogs: data.stats.blogs,
           galleryItems: data.stats.galleryItems,
           timelineEvents: data.stats.timelineEvents,
+          mediaWorks: data.stats.mediaWorks || 0,
           totalMessages: data.stats.totalMessages,
           unreadMessages: data.stats.unreadMessages
         });
       }
     } catch (err) {
-      // Offline Simulated Stats
-      setStats({
-        songs: songs.length || 58,
-        blogs: blogs.length || 16,
-        galleryItems: gallery.length || 28,
-        timelineEvents: timeline.length || 14,
-        totalMessages: messages.length || 46,
-        unreadMessages: messages.filter(m => m.status === 'unread').length || 12
-      });
+      console.error('Failed to load stats:', err);
     }
   };
 
@@ -96,6 +104,9 @@ export default function App() {
       const resTimeline = await fetch(`${API_URL}/timeline`);
       setTimeline(await resTimeline.json());
 
+      const resMedia = await fetch(`${API_URL}/media-works`);
+      setMediaWorks(await resMedia.json());
+
       const resMessages = await fetch(`${API_URL}/messages`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -103,33 +114,7 @@ export default function App() {
         setMessages(await resMessages.json());
       }
     } catch (err) {
-      console.warn('Running Admin Dashboard in simulated offline mode.');
-      if (songs.length === 0) {
-        setSongs([
-          { _id: 'song_1', title: 'Ennin Nenjil', category: 'Single', coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', releaseDate: '2024-05-15', description: 'A soulful romantic track blending strings and guitars.', isFeatured: true },
-          { _id: 'song_2', title: 'Marayuthe', category: 'Single', coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=400', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3', releaseDate: '2023-11-10', description: 'Flute prelude cinematic composition.', isFeatured: true },
-          { _id: 'song_3', title: 'Mathayile', category: 'Single', coverUrl: 'https://images.unsplash.com/photo-1487180142328-0c4e37023af5?q=80&w=400', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3', releaseDate: '2024-04-12', description: 'Semi-classical fusion track.', isFeatured: true },
-          { _id: 'song_4', title: 'Kathirinte Pookkal', category: 'Single', coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=400', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3', releaseDate: '2022-08-20', description: 'Uplifting Carnatic rhythm composition.', isFeatured: false },
-          { _id: 'song_5', title: 'Oru Mazha (Album)', category: 'Album', coverUrl: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=400', audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3', releaseDate: '2021-12-01', description: 'Award winning independent debut album.', isFeatured: true }
-        ]);
-        setBlogs([
-          { _id: 'blog_1', title: 'The Song That Still Carries His Name', category: 'Legacy', coverUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80', excerpt: 'Generational bonds of composition.', createdAt: '2024-05-15T00:00:00Z', isPublished: true, readingTime: '4 mins' },
-          { _id: 'blog_2', title: 'What I Learned Watching Music Being Created', category: 'BTS', coverUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80', excerpt: 'Nostalgic studio reflections.', createdAt: '2024-04-28T00:00:00Z', isPublished: true, readingTime: '3 mins' }
-        ]);
-        setGallery([
-          { _id: 'gal_1', title: 'Live Performance at Arena', url: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80', category: 'Concerts' },
-          { _id: 'gal_2', title: 'Studio Recording sessions', url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80', category: 'Studio' },
-          { _id: 'gal_3', title: 'Synthesizer keys setup', url: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80', category: 'Studio' }
-        ]);
-        setTimeline([
-          { _id: 'time_1', year: '2012', title: 'Inheriting the Harmonious Foundation', description: 'Trained in classical compositions under Saji Ram.' },
-          { _id: 'time_2', year: '2015', title: 'Vocal Stage Debut', description: 'First performance solo.' }
-        ]);
-        setMessages([
-          { _id: 'msg_1', name: 'Arun Menon', email: 'arun@example.com', subject: 'Live Performance Booking', message: 'Hi Midhun, we would love to book you for our college cultural event in Cochin.', status: 'unread', createdAt: '2026-06-22T10:00:00Z' },
-          { _id: 'msg_2', name: 'Neha George', email: 'neha@example.com', subject: 'Collaboration Request', message: 'Hello, looking to feature you as a vocalist in our indie track.', status: 'unread', createdAt: '2026-06-22T08:00:00Z' }
-        ]);
-      }
+      console.error('Failed to load data:', err);
     }
   };
 
@@ -155,14 +140,7 @@ export default function App() {
         setLoginError(data.message || 'Invalid credentials');
       }
     } catch (err) {
-      if (username === 'admin' && password === 'admin123') {
-        localStorage.setItem('adminToken', 'DEMO_ADMIN_KEY');
-        setToken('DEMO_ADMIN_KEY');
-        setIsAuthenticated(true);
-        confetti({ particleCount: 80, spread: 50, colors: ['#d4af37', '#ffffff'] });
-      } else {
-        setLoginError('Could not reach Express server. Type admin / admin123 for Demo Mode access.');
-      }
+      setLoginError('Could not connect to the Express server. Please check that the server is running.');
     } finally {
       setLoading(false);
     }
@@ -194,18 +172,13 @@ export default function App() {
         loadData();
         confetti({ particleCount: 50, colors: ['#d4af37'] });
       } else {
-        simulateAddSong();
+        const data = await res.json();
+        alert(data.message || 'Failed to add song.');
       }
     } catch (err) {
-      simulateAddSong();
+      console.error(err);
+      alert('Failed to connect to the server.');
     }
-  };
-
-  const simulateAddSong = () => {
-    const newSong = { _id: 'song_' + Date.now(), ...songForm, releaseDate: new Date() };
-    setSongs([newSong, ...songs]);
-    setSongForm({ title: '', category: 'Single', coverUrl: '', audioUrl: '', spotifyUrl: '', description: '', isFeatured: false });
-    confetti({ particleCount: 30, colors: ['#d4af37'] });
   };
 
   const handleDeleteSong = async (id) => {
@@ -218,12 +191,124 @@ export default function App() {
       if (res.ok) {
         loadData();
       } else {
-        setSongs(songs.filter(s => s._id !== id));
+        const data = await res.json();
+        alert(data.message || 'Failed to delete song.');
       }
     } catch (err) {
-      setSongs(songs.filter(s => s._id !== id));
+      console.error(err);
+      alert('Failed to connect to the server.');
     }
   };
+
+  const handleFileUpload = async (e, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        const path = data.fileUrl;
+        if (field === 'mediaCover') {
+          setMediaWorkForm(prev => ({ ...prev, coverUrl: path }));
+        } else if (field === 'mediaVideo') {
+          setMediaWorkForm(prev => ({ ...prev, videoUrl: path }));
+        } else if (field === 'mediaAudio') {
+          setMediaWorkForm(prev => ({ ...prev, audioUrl: path }));
+        } else if (field === 'songCover') {
+          setSongForm(prev => ({ ...prev, coverUrl: path }));
+        } else if (field === 'songAudio') {
+          setSongForm(prev => ({ ...prev, audioUrl: path }));
+        } else if (field === 'blogCover') {
+          setBlogForm(prev => ({ ...prev, coverUrl: path }));
+        }
+        alert('File uploaded successfully!');
+      } else {
+        alert(data.message || 'Upload failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Upload failed: server connection issue.');
+    }
+  };
+
+  const handleAddMediaWork = async (e) => {
+    e.preventDefault();
+    try {
+      const sanitizedForm = { ...mediaWorkForm };
+      if (sanitizedForm.type === 'independent_work') {
+        if (independentSubtype === 'audio') {
+          sanitizedForm.videoUrl = '';
+          sanitizedForm.mediaType = 'upload';
+        } else {
+          sanitizedForm.audioUrl = '';
+        }
+      }
+
+      const res = await fetch(`${API_URL}/media-works`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(sanitizedForm)
+      });
+      if (res.ok) {
+        setMediaWorkForm({
+          title: '',
+          type: 'short_film',
+          coverUrl: '',
+          videoUrl: '',
+          audioUrl: '',
+          mediaType: 'youtube',
+          releaseYear: '',
+          description: '',
+          isFeatured: false
+        });
+        setIndependentSubtype('video');
+        loadData();
+        loadStats();
+        confetti({ particleCount: 50, colors: ['#d4af37'] });
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to add media work.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to connect to the server.');
+    }
+  };
+
+  const handleDeleteMediaWork = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this media work?')) return;
+    try {
+      const res = await fetch(`${API_URL}/media-works/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        loadData();
+        loadStats();
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to delete media work.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to connect to the server.');
+    }
+  };
+
 
   const handleAddBlog = async (e) => {
     e.preventDefault();
@@ -240,17 +325,13 @@ export default function App() {
         setBlogForm({ title: '', category: 'Reflection', coverUrl: '', excerpt: '', content: '', readingTime: '4 mins', isPublished: true });
         loadData();
       } else {
-        simulateAddBlog();
+        const data = await res.json();
+        alert(data.message || 'Failed to add blog post.');
       }
     } catch (err) {
-      simulateAddBlog();
+      console.error(err);
+      alert('Failed to connect to the server.');
     }
-  };
-
-  const simulateAddBlog = () => {
-    const newBlog = { _id: 'blog_' + Date.now(), ...blogForm, createdAt: new Date() };
-    setBlogs([newBlog, ...blogs]);
-    setBlogForm({ title: '', category: 'Reflection', coverUrl: '', excerpt: '', content: '', readingTime: '4 mins', isPublished: true });
   };
 
   const handleDeleteBlog = async (id) => {
@@ -263,10 +344,12 @@ export default function App() {
       if (res.ok) {
         loadData();
       } else {
-        setBlogs(blogs.filter(b => b._id !== id));
+        const data = await res.json();
+        alert(data.message || 'Failed to delete blog post.');
       }
     } catch (err) {
-      setBlogs(blogs.filter(b => b._id !== id));
+      console.error(err);
+      alert('Failed to connect to the server.');
     }
   };
 
@@ -285,17 +368,13 @@ export default function App() {
         setGalleryForm({ title: '', url: '', type: 'image', category: 'Concerts', isFeatured: false });
         loadData();
       } else {
-        simulateAddGallery();
+        const data = await res.json();
+        alert(data.message || 'Failed to add gallery item.');
       }
     } catch (err) {
-      simulateAddGallery();
+      console.error(err);
+      alert('Failed to connect to the server.');
     }
-  };
-
-  const simulateAddGallery = () => {
-    const newItem = { _id: 'gal_' + Date.now(), ...galleryForm };
-    setGallery([newItem, ...gallery]);
-    setGalleryForm({ title: '', url: '', type: 'image', category: 'Concerts', isFeatured: false });
   };
 
   const handleDeleteGallery = async (id) => {
@@ -307,10 +386,12 @@ export default function App() {
       if (res.ok) {
         loadData();
       } else {
-        setGallery(gallery.filter(g => g._id !== id));
+        const data = await res.json();
+        alert(data.message || 'Failed to delete gallery item.');
       }
     } catch (err) {
-      setGallery(gallery.filter(g => g._id !== id));
+      console.error(err);
+      alert('Failed to connect to the server.');
     }
   };
 
@@ -329,17 +410,13 @@ export default function App() {
         setTimelineForm({ year: '', title: '', description: '' });
         loadData();
       } else {
-        simulateAddTimeline();
+        const data = await res.json();
+        alert(data.message || 'Failed to add timeline event.');
       }
     } catch (err) {
-      simulateAddTimeline();
+      console.error(err);
+      alert('Failed to connect to the server.');
     }
-  };
-
-  const simulateAddTimeline = () => {
-    const newEvent = { _id: 'time_' + Date.now(), ...timelineForm };
-    setTimeline([...timeline, newEvent].sort((a,b) => a.year.localeCompare(b.year)));
-    setTimelineForm({ year: '', title: '', description: '' });
   };
 
   const handleDeleteTimeline = async (id) => {
@@ -351,10 +428,12 @@ export default function App() {
       if (res.ok) {
         loadData();
       } else {
-        setTimeline(timeline.filter(t => t._id !== id));
+        const data = await res.json();
+        alert(data.message || 'Failed to delete timeline event.');
       }
     } catch (err) {
-      setTimeline(timeline.filter(t => t._id !== id));
+      console.error(err);
+      alert('Failed to connect to the server.');
     }
   };
 
@@ -367,10 +446,12 @@ export default function App() {
       if (res.ok) {
         loadData();
       } else {
-        setMessages(messages.map(m => m._id === id ? { ...m, status: 'read' } : m));
+        const data = await res.json();
+        alert(data.message || 'Failed to update message.');
       }
     } catch (err) {
-      setMessages(messages.map(m => m._id === id ? { ...m, status: 'read' } : m));
+      console.error(err);
+      alert('Failed to connect to the server.');
     }
   };
 
@@ -384,10 +465,12 @@ export default function App() {
       if (res.ok) {
         loadData();
       } else {
-        setMessages(messages.filter(m => m._id !== id));
+        const data = await res.json();
+        alert(data.message || 'Failed to delete message.');
       }
     } catch (err) {
-      setMessages(messages.filter(m => m._id !== id));
+      console.error(err);
+      alert('Failed to connect to the server.');
     }
   };
 
@@ -460,12 +543,7 @@ export default function App() {
             </button>
           </form>
 
-          <div className="mt-8 pt-6 border-t border-white/5 text-center">
-            <p className="text-[9.5px] text-gray-500 leading-relaxed">
-              <strong>Dev Demo Account:</strong><br />
-              User: <code className="text-gold-500 font-mono">admin</code> &bull; Password: <code className="text-gold-500 font-mono">admin123</code>
-            </p>
-          </div>
+
         </div>
       </div>
     );
@@ -497,6 +575,7 @@ export default function App() {
             {[
               { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={15} /> },
               { id: 'songs', label: 'Songs & Works', icon: <Disc size={15} /> },
+              { id: 'media-works', label: 'Media & Cinematic', icon: <Film size={15} /> },
               { id: 'gallery', label: 'Media Gallery', icon: <Image size={15} /> },
               { id: 'timeline', label: 'Timeline Milestones', icon: <Calendar size={15} /> },
               { id: 'blog', label: 'Blog Reflections', icon: <FileText size={15} /> },
@@ -614,13 +693,14 @@ export default function App() {
               </div>
 
               {/* Metric Counters Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-6">
                 {[
                   { label: 'Total Songs', value: stats.songs, change: '+12% from last month', up: true },
+                  { label: 'Media Works', value: stats.mediaWorks, change: 'Shorts, Series, Film', up: true },
                   { label: 'Total Listeners', value: '124.8K', change: '+18% from last month', up: true },
                   { label: 'Total Plays', value: '1.24M', change: '+22% from last month', up: true },
-                  { label: 'Achievements', value: stats.timelineEvents, change: '+8% from last month', up: true },
-                  { label: 'Booking Enquiries', value: stats.totalMessages, change: '-5% from last month', up: false }
+                  { label: 'Achievements', value: stats.timelineEvents, change: 'Timeline events', up: true },
+                  { label: 'Booking Inbox', value: stats.totalMessages, change: `${stats.unreadMessages} unread`, up: stats.unreadMessages > 0 }
                 ].map((m, i) => (
                   <div key={i} className="bg-obsidian-900 border border-white/5 p-5 rounded-sm shadow-md">
                     <span className="text-[9px] uppercase tracking-wider text-gray-500 block mb-2">{m.label}</span>
@@ -884,6 +964,254 @@ export default function App() {
                         </div>
                       </div>
                       <button onClick={() => handleDeleteSong(song._id)} className="text-gray-500 hover:text-red-400 p-2 transition-colors">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: MEDIA & CINEMATIC WORKS CMS */}
+          {activeTab === 'media-works' && (
+            <div className="space-y-8 animate-fade-in text-left">
+              <form onSubmit={handleAddMediaWork} className="bg-obsidian-900 border border-white/5 p-6 rounded-sm space-y-4">
+                <h3 className="font-serif text-base font-bold text-gold-500 uppercase tracking-widest flex items-center space-x-2">
+                  <Plus size={15} /> <span>Add Media & Cinematic Work</span>
+                </h3>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Title */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Project Title</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Echoes of Silence"
+                      value={mediaWorkForm.title}
+                      onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, title: e.target.value })}
+                      className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Type */}
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Work Category</label>
+                    <select
+                      value={mediaWorkForm.type}
+                      onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, type: e.target.value })}
+                      className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
+                    >
+                      <option value="short_film">Short Film</option>
+                      <option value="web_series">Web Series</option>
+                      <option value="tv_program">TV Program</option>
+                      <option value="movie">Movie / Feature Film</option>
+                      <option value="independent_work">Independent Work</option>
+                    </select>
+                  </div>
+
+                  {/* Release Year */}
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Release Year</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 2024"
+                      value={mediaWorkForm.releaseYear}
+                      onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, releaseYear: e.target.value })}
+                      className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Media Type / Subtype */}
+                  {mediaWorkForm.type === 'independent_work' ? (
+                    <>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Independent Work Type</label>
+                        <select
+                          value={independentSubtype}
+                          onChange={(e) => setIndependentSubtype(e.target.value)}
+                          className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
+                        >
+                          <option value="video">Video Release</option>
+                          <option value="audio">Audio Track</option>
+                        </select>
+                      </div>
+                      {independentSubtype === 'video' && (
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Video Source</label>
+                          <select
+                            value={mediaWorkForm.mediaType}
+                            onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, mediaType: e.target.value })}
+                            className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
+                          >
+                            <option value="youtube">YouTube Video Link</option>
+                            <option value="upload">User Uploaded Video</option>
+                          </select>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Media Resource Type</label>
+                      <select
+                        value={mediaWorkForm.mediaType}
+                        onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, mediaType: e.target.value })}
+                        className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
+                      >
+                        <option value="youtube">YouTube Video Link</option>
+                        <option value="upload">User Uploaded Video/Audio</option>
+                        <option value="image_only">Poster Image Only</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Featured */}
+                  <div className="flex items-center space-x-3 pt-6 h-full">
+                    <input
+                      type="checkbox"
+                      id="mediaFeatured"
+                      checked={mediaWorkForm.isFeatured}
+                      onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, isFeatured: e.target.checked })}
+                      className="rounded border-white/10 bg-obsidian-950 text-gold-500 focus:ring-gold-500/20"
+                    />
+                    <label htmlFor="mediaFeatured" className="text-xs text-gray-400 cursor-pointer font-medium select-none">
+                      Feature on Homepage
+                    </label>
+                  </div>
+
+                  {/* Cover Poster URL / Upload */}
+                  <div className="sm:col-span-2 lg:col-span-3">
+                    <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Cover Poster Artwork</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Image URL or upload a file"
+                        value={mediaWorkForm.coverUrl}
+                        onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, coverUrl: e.target.value })}
+                        className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none flex-1"
+                      />
+                      <label className="bg-white/5 border border-white/10 px-4 py-2 text-xs text-gray-300 rounded-sm cursor-pointer hover:bg-white/10 hover:text-white transition-colors flex items-center shrink-0">
+                        <span>Choose File</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileUpload(e, 'mediaCover')}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Video URL (if not image_only and not independent audio work) */}
+                  {mediaWorkForm.mediaType !== 'image_only' && !(mediaWorkForm.type === 'independent_work' && independentSubtype === 'audio') && (
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">
+                        {mediaWorkForm.mediaType === 'youtube' ? 'YouTube Video URL' : 'Upload Video File'}
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder={mediaWorkForm.mediaType === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 'Video URL or upload file'}
+                          value={mediaWorkForm.videoUrl}
+                          onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, videoUrl: e.target.value })}
+                          className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none flex-1"
+                        />
+                        {mediaWorkForm.mediaType === 'upload' && (
+                          <label className="bg-white/5 border border-white/10 px-4 py-2 text-xs text-gray-300 rounded-sm cursor-pointer hover:bg-white/10 hover:text-white transition-colors flex items-center shrink-0">
+                            <span>Upload Video</span>
+                            <input
+                              type="file"
+                              accept="video/*"
+                              onChange={(e) => handleFileUpload(e, 'mediaVideo')}
+                              className="hidden"
+                            />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Audio URL (only for independent audio work) */}
+                  {mediaWorkForm.type === 'independent_work' && independentSubtype === 'audio' && (
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Audio File (MP3/Soundtrack)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Audio URL or upload audio file"
+                          value={mediaWorkForm.audioUrl}
+                          onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, audioUrl: e.target.value })}
+                          className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none flex-1"
+                        />
+                        <label className="bg-white/5 border border-white/10 px-4 py-2 text-xs text-gray-300 rounded-sm cursor-pointer hover:bg-white/10 hover:text-white transition-colors flex items-center shrink-0">
+                          <span>Upload Audio</span>
+                          <input
+                            type="file"
+                            accept="audio/*"
+                            onChange={(e) => handleFileUpload(e, 'mediaAudio')}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Description */}
+                  <div className="sm:col-span-2 lg:col-span-3">
+                    <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Project Description</label>
+                    <textarea
+                      rows={3}
+                      placeholder="Enter details about this creative work (synopsis, cast/crew, roles, etc.)"
+                      value={mediaWorkForm.description}
+                      onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, description: e.target.value })}
+                      className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none resize-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="bg-gold-500 hover:bg-gold-600 text-black text-xs uppercase tracking-widest font-black px-6 py-3 rounded-sm transition-all duration-300 cursor-pointer shadow-md hover:shadow-gold-500/20"
+                  >
+                    Add Media Work
+                  </button>
+                </div>
+              </form>
+
+              {/* Media Works List Table */}
+              <div className="bg-obsidian-900 border border-white/5 rounded-sm p-6 space-y-4">
+                <h3 className="font-serif text-base font-bold text-white uppercase tracking-widest">
+                  Existing Media Works ({mediaWorks.length})
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {mediaWorks.map((work) => (
+                    <div key={work._id} className="bg-obsidian-950 border border-white/5 rounded p-3 flex justify-between items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {work.coverUrl ? (
+                          <img
+                            src={work.coverUrl.startsWith('/uploads') ? `${API_URL.replace('/api', '')}${work.coverUrl}` : work.coverUrl}
+                            className="w-10 h-10 object-cover rounded-sm border border-white/10 shrink-0"
+                            alt=""
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-sm flex items-center justify-center shrink-0 text-gray-500 text-[10px] font-bold uppercase">
+                            No Cover
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <h5 className="font-serif text-xs font-bold text-gold-200 truncate">{work.title}</h5>
+                          <p className="text-[9px] text-gray-500 uppercase tracking-widest truncate">
+                            {work.type === 'independent_work' 
+                              ? `independent work (${(!!work.audioUrl || /\.(mp3|wav|ogg|aac|m4a|flac)(?:\?|$)/i.test(work.videoUrl || '') || work.videoUrl?.includes('SoundHelix')) ? 'audio' : 'video'})` 
+                              : work.type.replace('_', ' ')} &bull; {work.releaseYear} {work.isFeatured ? '(Featured)' : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <button onClick={() => handleDeleteMediaWork(work._id)} className="text-gray-500 hover:text-red-400 p-2 transition-colors shrink-0">
                         <Trash2 size={14} />
                       </button>
                     </div>

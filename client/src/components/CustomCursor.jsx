@@ -1,120 +1,34 @@
 import React, { useEffect, useRef } from 'react';
 
 const CustomCursor = () => {
-  const cursorDotRef = useRef(null);
-  const cursorOutlineRef = useRef(null);
   const particlesContainerRef = useRef(null);
-  
-  // State refs for animation loop to avoid re-renders
-  const mouse = useRef({ x: typeof window !== 'undefined' ? window.innerWidth / 2 : 0, y: typeof window !== 'undefined' ? window.innerHeight / 2 : 0 });
-  const outline = useRef({ x: typeof window !== 'undefined' ? window.innerWidth / 2 : 0, y: typeof window !== 'undefined' ? window.innerHeight / 2 : 0 });
-  
-  const isHovering = useRef(false);
   const particles = useRef([]);
-  
-  const currentScale = useRef(1);
-  const currentDotScale = useRef(1);
-  const isVisible = useRef(false);
-  
   const notes = ['♪', '♫', '♬', '♩'];
   
   useEffect(() => {
-    const onMouseMove = (e) => {
-      isVisible.current = true;
-      mouse.current.x = e.clientX;
-      mouse.current.y = e.clientY;
-    };
-    
-    const onMouseLeave = () => {
-      isVisible.current = false;
-    };
-    
-    const handleInteractionStart = (x, y, targetEl) => {
-      if (!targetEl) return;
-      const target = targetEl.closest('a, button, input, select, textarea, [role="button"], .cursor-pointer, .card, img, .interactive');
-      
-      if (target) {
-        if (!isHovering.current) {
-          isHovering.current = true;
-          spawnParticles(x, y);
-        }
+    const onClick = (e) => {
+      let x, y;
+      if (e.clientX !== undefined) {
+        x = e.clientX;
+        y = e.clientY;
+      } else if (e.touches && e.touches[0]) {
+        x = e.touches[0].clientX;
+        y = e.touches[0].clientY;
       } else {
-        if (isHovering.current) {
-          isHovering.current = false;
-        }
+        return;
       }
+      spawnParticles(x, y);
     };
 
-    const onMouseOver = (e) => {
-      handleInteractionStart(mouse.current.x, mouse.current.y, e.target);
-    };
-
-    const onTouchStart = (e) => {
-      isVisible.current = true;
-      if (e.touches && e.touches[0]) {
-        mouse.current.x = e.touches[0].clientX;
-        mouse.current.y = e.touches[0].clientY;
-        handleInteractionStart(mouse.current.x, mouse.current.y, e.target);
-      }
-    };
-
-    const onTouchMove = (e) => {
-      isVisible.current = true;
-      if (e.touches && e.touches[0]) {
-        mouse.current.x = e.touches[0].clientX;
-        mouse.current.y = e.touches[0].clientY;
-      }
-    };
-
-    const onTouchEnd = () => {
-      isVisible.current = false;
-    };
-    
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseover', onMouseOver);
-    document.addEventListener('mouseleave', onMouseLeave);
-    window.addEventListener('touchstart', onTouchStart, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: true });
-    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    window.addEventListener('click', onClick);
     
     let animationFrameId;
     
     const render = () => {
-      // Smooth interpolation for outline position
-      outline.current.x += (mouse.current.x - outline.current.x) * 0.15;
-      outline.current.y += (mouse.current.y - outline.current.y) * 0.15;
-      
-      // Smooth interpolation for scale
-      const targetScale = isHovering.current ? 1.5 : 1;
-      currentScale.current += (targetScale - currentScale.current) * 0.15;
-      
-      const targetDotScale = isHovering.current ? 0 : 1;
-      currentDotScale.current += (targetDotScale - currentDotScale.current) * 0.2;
-      
-      const targetOpacity = isVisible.current ? 1 : 0;
-      
-      if (cursorDotRef.current) {
-        cursorDotRef.current.style.transform = `translate(${mouse.current.x}px, ${mouse.current.y}px) translate(-50%, -50%) scale(${currentDotScale.current})`;
-        cursorDotRef.current.style.opacity = targetOpacity;
-      }
-      if (cursorOutlineRef.current) {
-        cursorOutlineRef.current.style.transform = `translate(${outline.current.x}px, ${outline.current.y}px) translate(-50%, -50%) scale(${currentScale.current})`;
-        cursorOutlineRef.current.style.opacity = targetOpacity;
-        
-        // Inline styles bypass Tailwind build-time purge/compilation dynamic class bugs entirely
-        if (isHovering.current) {
-          cursorOutlineRef.current.style.borderColor = '#000000';
-          cursorOutlineRef.current.style.backgroundColor = 'rgba(0, 0, 0, 0.08)';
-        } else {
-          cursorOutlineRef.current.style.borderColor = 'rgba(0, 0, 0, 0.35)';
-          cursorOutlineRef.current.style.backgroundColor = 'transparent';
-        }
-      }
-      
-      // Update particles
+      // Update particles physics and DOM positions
       for (let i = particles.current.length - 1; i >= 0; i--) {
         const p = particles.current[i];
-        p.life -= 0.012; // Controls lifespan
+        p.life -= 0.015; // Controls lifespan speed
         
         if (p.life <= 0) {
           if (p.element && p.element.parentNode) {
@@ -124,16 +38,15 @@ const CustomCursor = () => {
           continue;
         }
         
-        // Update physics
+        // Apply velocity & gentle upward drift
         p.x += p.vx;
         p.y += p.vy;
-        p.vy -= 0.02; // Gentle gravity floating up
+        p.vy -= 0.025; // Gentle gravity floating up
         p.rotation += p.rotSpeed;
         
-        // Update DOM
+        // Update DOM transform and fade out smoothly
         if (p.element) {
           p.element.style.transform = `translate(${p.x}px, ${p.y}px) scale(${p.scale}) rotate(${p.rotation}deg)`;
-          // Fade out smoothly based on life
           p.element.style.opacity = Math.min(1, p.life * 1.5);
         }
       }
@@ -144,15 +57,10 @@ const CustomCursor = () => {
     render();
     
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseover', onMouseOver);
-      document.removeEventListener('mouseleave', onMouseLeave);
-      window.removeEventListener('touchstart', onTouchStart);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('click', onClick);
       cancelAnimationFrame(animationFrameId);
       
-      // Clean up particles
+      // Clean up any remaining particles
       particles.current.forEach(p => {
         if (p.element && p.element.parentNode) {
           p.element.parentNode.removeChild(p.element);
@@ -165,7 +73,7 @@ const CustomCursor = () => {
   const spawnParticles = (x, y) => {
     if (!particlesContainerRef.current) return;
     
-    const numParticles = Math.floor(Math.random() * 3) + 4; // 4 to 6 particles
+    const numParticles = Math.floor(Math.random() * 3) + 5; // 5 to 7 particles
     
     for (let i = 0; i < numParticles; i++) {
       const el = document.createElement('div');
@@ -173,17 +81,20 @@ const CustomCursor = () => {
       el.innerText = notes[Math.floor(Math.random() * notes.length)];
       particlesContainerRef.current.appendChild(el);
       
+      // Randomize velocities for a spreading burst effect
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.0 + Math.random() * 2.5;
+      
       particles.current.push({
         element: el,
         x: x,
         y: y,
-        // Randomized velocities for a gentler burst effect
-        vx: (Math.random() - 0.5) * 2, 
-        vy: (Math.random() - 0.5) * 1.5 - 1,
+        vx: Math.cos(angle) * speed, 
+        vy: Math.sin(angle) * speed - 1.2, // bias movement upwards
         life: 1.0 + Math.random() * 0.4, 
-        scale: 0.6 + Math.random() * 0.6,
+        scale: 0.5 + Math.random() * 0.7,
         rotation: Math.random() * 360,
-        rotSpeed: (Math.random() - 0.5) * 2
+        rotSpeed: (Math.random() - 0.5) * 3
       });
     }
   };
@@ -191,16 +102,6 @@ const CustomCursor = () => {
   return (
     <div className="custom-cursor-container z-[9999] pointer-events-none fixed top-0 left-0 w-full h-full overflow-hidden">
       <div ref={particlesContainerRef} className="particles-container absolute top-0 left-0 w-full h-full pointer-events-none" />
-      <div 
-        ref={cursorOutlineRef} 
-        className="cursor-outline absolute top-0 left-0 w-10 h-10 border rounded-full pointer-events-none transition-colors duration-300 backdrop-blur-[0.5px]"
-        style={{ borderColor: 'rgba(0, 0, 0, 0.25)', backgroundColor: 'transparent', boxShadow: '0 0 2px rgba(255, 255, 255, 0.4)' }}
-      />
-      <div 
-        ref={cursorDotRef} 
-        className="cursor-dot absolute top-0 left-0 w-1.5 h-1.5 bg-black rounded-full pointer-events-none border border-white/20"
-        style={{ backgroundColor: '#000000', boxShadow: '0 0 4px rgba(255, 255, 255, 0.5)' }}
-      />
     </div>
   );
 };

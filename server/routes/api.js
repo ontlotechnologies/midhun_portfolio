@@ -3,14 +3,13 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-const { Song, Blog, GalleryItem, TimelineEvent, ContactMessage, Admin } = require('../models/Schemas');
-const MockDb = require('../mockData');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { Song, Blog, GalleryItem, TimelineEvent, ContactMessage, Admin, MediaWork } = require('../models/Schemas');
 
 // JWT Secret Key (in prod should be loaded from .env)
 const JWT_SECRET = process.env.JWT_SECRET || 'MIDHUN_SAJI_RAM_SECRET_KEY_123';
-
-// Fallback check
-const useMock = () => mongoose.connection.readyState !== 1;
 
 // Auth Middleware
 const authMiddleware = (req, res, next) => {
@@ -28,6 +27,40 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+// Multer File Upload Configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit for video/audio
+});
+
+// File upload endpoint (requires auth)
+router.post('/upload', authMiddleware, upload.single('file'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    // Return relative URL (e.g. /uploads/filename.ext)
+    const fileUrl = `/uploads/${req.file.filename}`;
+    res.json({ success: true, fileUrl });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Upload failed', error: error.message });
+  }
+});
+
 /* =========================================================================
    AUTH ROUTES
    ========================================================================= */
@@ -40,14 +73,7 @@ router.post('/admin/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide username and password' });
     }
 
-    if (useMock()) {
-      const isMatch = MockDb.verifyAdmin(username, password);
-      if (!isMatch) {
-        return res.status(401).json({ success: false, message: 'Invalid credentials (Demo Mode)' });
-      }
-      const token = jwt.sign({ id: 'demo_admin', username: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
-      return res.json({ success: true, token, admin: { id: 'demo_admin', username: 'admin' } });
-    }
+
 
     const admin = await Admin.findOne({ username });
     if (!admin) {
@@ -79,9 +105,7 @@ router.get('/admin/verify', authMiddleware, (req, res) => {
 // Get all songs
 router.get('/songs', async (req, res) => {
   try {
-    if (useMock()) {
-      return res.json(MockDb.getSongs());
-    }
+
     const songs = await Song.find().sort({ releaseDate: -1 });
     res.json(songs);
   } catch (error) {
@@ -92,10 +116,7 @@ router.get('/songs', async (req, res) => {
 // Create song
 router.post('/songs', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const song = MockDb.createSong(req.body);
-      return res.status(201).json({ success: true, data: song });
-    }
+
     const song = new Song(req.body);
     await song.save();
     res.status(201).json({ success: true, data: song });
@@ -107,11 +128,7 @@ router.post('/songs', authMiddleware, async (req, res) => {
 // Update song
 router.put('/songs/:id', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const song = MockDb.updateSong(req.params.id, req.body);
-      if (!song) return res.status(404).json({ success: false, message: 'Song not found' });
-      return res.json({ success: true, data: song });
-    }
+
     const song = await Song.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!song) return res.status(404).json({ success: false, message: 'Song not found' });
     res.json({ success: true, data: song });
@@ -123,11 +140,7 @@ router.put('/songs/:id', authMiddleware, async (req, res) => {
 // Delete song
 router.delete('/songs/:id', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const deleted = MockDb.deleteSong(req.params.id);
-      if (!deleted) return res.status(404).json({ success: false, message: 'Song not found' });
-      return res.json({ success: true, message: 'Song deleted successfully' });
-    }
+
     const song = await Song.findByIdAndDelete(req.params.id);
     if (!song) return res.status(404).json({ success: false, message: 'Song not found' });
     res.json({ success: true, message: 'Song deleted successfully' });
@@ -144,9 +157,7 @@ router.delete('/songs/:id', authMiddleware, async (req, res) => {
 // Get all blogs
 router.get('/blogs', async (req, res) => {
   try {
-    if (useMock()) {
-      return res.json(MockDb.getBlogs(req.query.all === 'true'));
-    }
+
     const query = req.query.all === 'true' ? {} : { isPublished: true };
     const blogs = await Blog.find(query).sort({ createdAt: -1 });
     res.json(blogs);
@@ -158,11 +169,7 @@ router.get('/blogs', async (req, res) => {
 // Get blog by slug
 router.get('/blogs/:slug', async (req, res) => {
   try {
-    if (useMock()) {
-      const blog = MockDb.getBlogBySlug(req.params.slug);
-      if (!blog) return res.status(404).json({ success: false, message: 'Blog post not found' });
-      return res.json(blog);
-    }
+
     const blog = await Blog.findOne({ slug: req.params.slug });
     if (!blog) return res.status(404).json({ success: false, message: 'Blog post not found' });
     res.json(blog);
@@ -174,10 +181,7 @@ router.get('/blogs/:slug', async (req, res) => {
 // Create blog
 router.post('/blogs', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const blog = MockDb.createBlog(req.body);
-      return res.status(201).json({ success: true, data: blog });
-    }
+
     const { title } = req.body;
     let slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     
@@ -201,11 +205,7 @@ router.post('/blogs', authMiddleware, async (req, res) => {
 // Update blog
 router.put('/blogs/:id', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const blog = MockDb.updateBlog(req.params.id, req.body);
-      if (!blog) return res.status(404).json({ success: false, message: 'Blog post not found' });
-      return res.json({ success: true, data: blog });
-    }
+
     const blog = await Blog.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!blog) return res.status(404).json({ success: false, message: 'Blog post not found' });
     res.json({ success: true, data: blog });
@@ -217,11 +217,7 @@ router.put('/blogs/:id', authMiddleware, async (req, res) => {
 // Delete blog
 router.delete('/blogs/:id', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const deleted = MockDb.deleteBlog(req.params.id);
-      if (!deleted) return res.status(404).json({ success: false, message: 'Blog post not found' });
-      return res.json({ success: true, message: 'Blog post deleted successfully' });
-    }
+
     const blog = await Blog.findByIdAndDelete(req.params.id);
     if (!blog) return res.status(404).json({ success: false, message: 'Blog post not found' });
     res.json({ success: true, message: 'Blog post deleted successfully' });
@@ -238,9 +234,7 @@ router.delete('/blogs/:id', authMiddleware, async (req, res) => {
 // Get gallery items
 router.get('/gallery', async (req, res) => {
   try {
-    if (useMock()) {
-      return res.json(MockDb.getGallery());
-    }
+
     const items = await GalleryItem.find().sort({ createdAt: -1 });
     res.json(items);
   } catch (error) {
@@ -251,10 +245,7 @@ router.get('/gallery', async (req, res) => {
 // Create gallery item
 router.post('/gallery', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const item = MockDb.createGalleryItem(req.body);
-      return res.status(201).json({ success: true, data: item });
-    }
+
     const item = new GalleryItem(req.body);
     await item.save();
     res.status(201).json({ success: true, data: item });
@@ -266,11 +257,7 @@ router.post('/gallery', authMiddleware, async (req, res) => {
 // Delete gallery item
 router.delete('/gallery/:id', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const deleted = MockDb.deleteGalleryItem(req.params.id);
-      if (!deleted) return res.status(404).json({ success: false, message: 'Gallery item not found' });
-      return res.json({ success: true, message: 'Gallery item deleted' });
-    }
+
     const item = await GalleryItem.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ success: false, message: 'Gallery item not found' });
     res.json({ success: true, message: 'Gallery item deleted' });
@@ -287,9 +274,7 @@ router.delete('/gallery/:id', authMiddleware, async (req, res) => {
 // Get timeline items
 router.get('/timeline', async (req, res) => {
   try {
-    if (useMock()) {
-      return res.json(MockDb.getTimeline());
-    }
+
     const items = await TimelineEvent.find().sort({ year: 1 });
     res.json(items);
   } catch (error) {
@@ -300,10 +285,7 @@ router.get('/timeline', async (req, res) => {
 // Create timeline event
 router.post('/timeline', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const item = MockDb.createTimelineEvent(req.body);
-      return res.status(201).json({ success: true, data: item });
-    }
+
     const item = new TimelineEvent(req.body);
     await item.save();
     res.status(201).json({ success: true, data: item });
@@ -315,16 +297,73 @@ router.post('/timeline', authMiddleware, async (req, res) => {
 // Delete timeline event
 router.delete('/timeline/:id', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const deleted = MockDb.deleteTimelineEvent(req.params.id);
-      if (!deleted) return res.status(404).json({ success: false, message: 'Timeline event not found' });
-      return res.json({ success: true, message: 'Timeline event deleted' });
-    }
+
     const item = await TimelineEvent.findByIdAndDelete(req.params.id);
     if (!item) return res.status(404).json({ success: false, message: 'Timeline event not found' });
     res.json({ success: true, message: 'Timeline event deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete timeline event', error: error.message });
+  }
+});
+
+
+/* =========================================================================
+   MEDIA WORKS ROUTES
+   ========================================================================= */
+
+// Get all media works
+router.get('/media-works', async (req, res) => {
+  try {
+    const type = req.query.type;
+    const query = type ? { type } : {};
+    const works = await MediaWork.find(query).sort({ releaseYear: -1, createdAt: -1 });
+    res.json(works);
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch media works', error: error.message });
+  }
+});
+
+// Get a single media work
+router.get('/media-works/:id', async (req, res) => {
+  try {
+    const work = await MediaWork.findById(req.params.id);
+    if (!work) return res.status(404).json({ success: false, message: 'Media work not found' });
+    res.json(work);
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch media work', error: error.message });
+  }
+});
+
+// Create a media work (Admin only)
+router.post('/media-works', authMiddleware, async (req, res) => {
+  try {
+    const work = new MediaWork(req.body);
+    await work.save();
+    res.status(201).json({ success: true, data: work });
+  } catch (error) {
+    res.status(400).json({ success: false, message: 'Failed to create media work', error: error.message });
+  }
+});
+
+// Update a media work (Admin only)
+router.put('/media-works/:id', authMiddleware, async (req, res) => {
+  try {
+    const work = await MediaWork.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!work) return res.status(404).json({ success: false, message: 'Media work not found' });
+    res.json({ success: true, data: work });
+  } catch (error) {
+    res.status(400).json({ success: false, message: 'Failed to update media work', error: error.message });
+  }
+});
+
+// Delete a media work (Admin only)
+router.delete('/media-works/:id', authMiddleware, async (req, res) => {
+  try {
+    const work = await MediaWork.findByIdAndDelete(req.params.id);
+    if (!work) return res.status(404).json({ success: false, message: 'Media work not found' });
+    res.json({ success: true, message: 'Media work deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to delete media work', error: error.message });
   }
 });
 
@@ -336,10 +375,7 @@ router.delete('/timeline/:id', authMiddleware, async (req, res) => {
 // Submit a contact form
 router.post('/messages', async (req, res) => {
   try {
-    if (useMock()) {
-      const msg = MockDb.createMessage(req.body);
-      return res.status(201).json({ success: true, message: 'Message sent successfully! (Demo Mode)' });
-    }
+
     const { name, email, message } = req.body;
     if (!name || !email || !message) {
       return res.status(400).json({ success: false, message: 'Please fill in all required fields' });
@@ -355,9 +391,7 @@ router.post('/messages', async (req, res) => {
 // Get all messages (Admin only)
 router.get('/messages', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      return res.json(MockDb.getMessages());
-    }
+
     const messages = await ContactMessage.find().sort({ createdAt: -1 });
     res.json(messages);
   } catch (error) {
@@ -368,11 +402,7 @@ router.get('/messages', authMiddleware, async (req, res) => {
 // Mark message as read (Admin only)
 router.put('/messages/:id', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const msg = MockDb.markMessageRead(req.params.id);
-      if (!msg) return res.status(404).json({ success: false, message: 'Message not found' });
-      return res.json({ success: true, data: msg });
-    }
+
     const message = await ContactMessage.findByIdAndUpdate(
       req.params.id, 
       { status: 'read' }, 
@@ -388,11 +418,7 @@ router.put('/messages/:id', authMiddleware, async (req, res) => {
 // Delete message (Admin only)
 router.delete('/messages/:id', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      const deleted = MockDb.deleteMessage(req.params.id);
-      if (!deleted) return res.status(404).json({ success: false, message: 'Message not found' });
-      return res.json({ success: true, message: 'Message deleted' });
-    }
+
     const message = await ContactMessage.findByIdAndDelete(req.params.id);
     if (!message) return res.status(404).json({ success: false, message: 'Message not found' });
     res.json({ success: true, message: 'Message deleted' });
@@ -407,16 +433,12 @@ router.delete('/messages/:id', authMiddleware, async (req, res) => {
 
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
-    if (useMock()) {
-      return res.json({
-        success: true,
-        stats: MockDb.getStats()
-      });
-    }
+
     const songCount = await Song.countDocuments();
     const blogCount = await Blog.countDocuments();
     const galleryCount = await GalleryItem.countDocuments();
     const timelineCount = await TimelineEvent.countDocuments();
+    const mediaWorkCount = await MediaWork.countDocuments();
     const messageCount = await ContactMessage.countDocuments();
     const unreadMessageCount = await ContactMessage.countDocuments({ status: 'unread' });
 
@@ -427,6 +449,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
         blogs: blogCount,
         galleryItems: galleryCount,
         timelineEvents: timelineCount,
+        mediaWorks: mediaWorkCount,
         totalMessages: messageCount,
         unreadMessages: unreadMessageCount
       }

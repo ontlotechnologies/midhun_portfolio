@@ -58,11 +58,25 @@ const AdminSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true }
 }, { timestamps: true });
 
+// MediaWork Schema
+const MediaWorkSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  type: { type: String, required: true, enum: ['short_film', 'web_series', 'tv_program', 'movie', 'independent_work'] },
+  coverUrl: { type: String, default: '' }, // Poster image
+  videoUrl: { type: String, default: '' }, // Youtube link or uploaded file URL
+  audioUrl: { type: String, default: '' }, // Independent audio upload if any
+  mediaType: { type: String, enum: ['youtube', 'upload', 'image_only'], default: 'youtube' },
+  releaseYear: { type: String, default: '' },
+  description: { type: String, default: '' },
+  isFeatured: { type: Boolean, default: false }
+}, { timestamps: true });
+
 module.exports = {
   Song: mongoose.model('Song', SongSchema),
   Blog: mongoose.model('Blog', BlogSchema),
   GalleryItem: mongoose.model('GalleryItem', GallerySchema),
   TimelineEvent: mongoose.model('TimelineEvent', TimelineSchema),
   ContactMessage: mongoose.model('ContactMessage', MessageSchema),
-  Admin: mongoose.model('Admin', AdminSchema)
+  Admin: mongoose.model('Admin', AdminSchema),
+  MediaWork: mongoose.model('MediaWork', MediaWorkSchema)
 };

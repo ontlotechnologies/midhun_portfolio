@@ -16,7 +16,7 @@ export default function ScrollReveal({ children, delay = 0, duration = 1.3 }) {
         filter: 'blur(0px)',
         y: 0
       }}
-      viewport={{ once: false, amount: 0.05 }}
+      viewport={{ once: true, amount: 0.05 }}
       transition={{
         duration: duration,
         delay: delay,

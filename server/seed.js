@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-const { Song, Blog, GalleryItem, TimelineEvent, Admin } = require('./models/Schemas');
+const { Song, Blog, GalleryItem, TimelineEvent, Admin, MediaWork } = require('./models/Schemas');
 
 async function seedDatabase() {
   try {
@@ -11,6 +11,7 @@ async function seedDatabase() {
     await GalleryItem.deleteMany({});
     await TimelineEvent.deleteMany({});
     await Admin.deleteMany({});
+    await MediaWork.deleteMany({});
 
     // 2. Seed Admin User
     console.log('Seeding: Creating admin account...');
@@ -270,6 +271,110 @@ async function seedDatabase() {
       }
     ]);
 
+    // 7. Seed Media Works
+    console.log('Seeding: Inserting media works...');
+    await MediaWork.insertMany([
+      {
+        title: 'Echoes of Silence',
+        type: 'short_film',
+        coverUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        mediaType: 'youtube',
+        releaseYear: '2024',
+        description: 'An award-winning short film exploring the visual landscape of memories and soundscapes in solitude.',
+        isFeatured: true
+      },
+      {
+        title: 'The Last Note',
+        type: 'short_film',
+        coverUrl: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=800&auto=format&fit=crop',
+        videoUrl: 'https://www.youtube.com/watch?v=9xwazD5SyVg',
+        mediaType: 'youtube',
+        releaseYear: '2023',
+        description: 'A dramatic narrative of a maestro composing his final symphony in the misty hills of Munnar.',
+        isFeatured: false
+      },
+      {
+        title: 'Strings Attached - Season 1',
+        type: 'web_series',
+        coverUrl: 'https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=800&auto=format&fit=crop',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        mediaType: 'youtube',
+        releaseYear: '2023',
+        description: 'A 5-episode musical drama series charting the struggles and triumphs of an indie band in Kochi.',
+        isFeatured: true
+      },
+      {
+        title: 'Kochi Chronicles',
+        type: 'web_series',
+        coverUrl: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=800&auto=format&fit=crop',
+        videoUrl: 'https://www.youtube.com/watch?v=9xwazD5SyVg',
+        mediaType: 'youtube',
+        releaseYear: '2022',
+        description: 'A critically acclaimed web series depicting the intersecting lives of four street musicians.',
+        isFeatured: false
+      },
+      {
+        title: 'Rhythm & Soul Live',
+        type: 'tv_program',
+        coverUrl: 'https://images.unsplash.com/photo-1460889687773-43400005d654?q=80&w=800&auto=format&fit=crop',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        mediaType: 'youtube',
+        releaseYear: '2024',
+        description: 'A special weekly broadcast television show showcasing the rich classical fusion musical legacy of Kerala.',
+        isFeatured: true
+      },
+      {
+        title: 'Music Masters TV',
+        type: 'tv_program',
+        coverUrl: 'https://images.unsplash.com/photo-1522158632663-614062800fda?q=80&w=800&auto=format&fit=crop',
+        videoUrl: 'https://www.youtube.com/watch?v=9xwazD5SyVg',
+        mediaType: 'youtube',
+        releaseYear: '2023',
+        description: 'A primetime television program paying tribute to legendary music composers and their masterpieces.',
+        isFeatured: false
+      },
+      {
+        title: 'Path of the Wind',
+        type: 'movie',
+        coverUrl: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=800&auto=format&fit=crop',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        mediaType: 'youtube',
+        releaseYear: '2024',
+        description: 'A feature-length romantic drama. Midhun Saji Ram serves as the primary music director and composer.',
+        isFeatured: true
+      },
+      {
+        title: 'Shadows in the Rain',
+        type: 'movie',
+        coverUrl: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=800&auto=format&fit=crop',
+        mediaType: 'image_only',
+        releaseYear: '2022',
+        description: 'An independent thriller movie. Poster art showcase; soundtrack composed by Midhun Saji Ram.',
+        isFeatured: false
+      },
+      {
+        title: 'Sunset Improvisations',
+        type: 'independent_work',
+        coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop',
+        videoUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3',
+        mediaType: 'upload',
+        releaseYear: '2024',
+        description: 'A raw, single-take keyboard improvisation recorded during sunset on the beach. Audio upload.',
+        isFeatured: true
+      },
+      {
+        title: 'Sonic Landscapes - Cinematic Visualizer',
+        type: 'independent_work',
+        coverUrl: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80&w=800&auto=format&fit=crop',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        mediaType: 'youtube',
+        releaseYear: '2023',
+        description: 'An experimental audiovisual track combining synth waves with ambient natural sound recordings.',
+        isFeatured: false
+      }
+    ]);
+
     console.log('Seeding: Database seeding completed successfully.');
   } catch (error) {
     console.error('Database seeding failed:', error.message);
@@ -278,6 +383,13 @@ async function seedDatabase() {
 
 // Standalone execution support
 if (require.main === module) {
+  const dns = require('dns');
+  dns.setDefaultResultOrder('ipv4first');
+  try {
+    dns.setServers(['8.8.8.8', '1.1.1.1']);
+  } catch (e) {
+    console.warn('Warning: Could not set DNS servers. Falling back to default system DNS.', e.message);
+  }
   require('dotenv').config();
   const uri = process.env.MONGO_URI;
   if (!uri) {

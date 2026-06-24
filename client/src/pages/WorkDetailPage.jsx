@@ -3,12 +3,68 @@ import { ArrowLeft, Play, Pause, Music, Mic, PenTool, Sliders, Home as HomeIcon,
 import { FaSpotify, FaYoutube } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 
-export default function WorkDetailPage({ song, onBackClick, onPlayClick, currentSong, isPlaying }) {
-  if (!song) return null;
+export default function WorkDetailPage({ song, onBackClick, onPlayClick, currentSong, isPlaying, loading }) {
+  const [copied, setCopied] = useState(false);
+
+  if (loading || !song) {
+    return (
+      <div className="min-h-screen bg-white text-charcoal-900 animate-fade-in flex flex-col pt-24 pb-16">
+        <div className="max-w-7xl mx-auto px-6 w-full flex-1 flex flex-col justify-center animate-pulse">
+          
+          {/* Back trigger placeholder */}
+          <div className="h-4 bg-cream-200 rounded w-32 mb-8" />
+
+          {/* 3-Column Content Layout Mockup */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+            
+            {/* Column 1: Artwork image placeholder & Stream links */}
+            <div className="lg:col-span-5 flex flex-col space-y-4">
+              <div className="aspect-square w-full bg-cream-200 border border-cream-300 rounded shadow-sm" />
+              <div className="flex gap-3">
+                <div className="flex-1 h-11 bg-cream-200 border border-cream-300 rounded" />
+                <div className="flex-1 h-11 bg-cream-200 border border-cream-300 rounded" />
+              </div>
+            </div>
+
+            {/* Column 2: Header info, Description, Audio Player Placeholder & Credits */}
+            <div className="lg:col-span-7 flex flex-col justify-start">
+              <div className="h-5 bg-cream-200 rounded w-20 mb-3" />
+              <div className="h-10 bg-cream-200 rounded w-3/4 mb-4" />
+              <div className="space-y-2 mb-6">
+                <div className="h-3.5 bg-cream-200 rounded w-full" />
+                <div className="h-3.5 bg-cream-200 rounded w-5/6" />
+                <div className="h-3.5 bg-cream-200 rounded w-4/5" />
+              </div>
+
+              {/* Play track preview block mockup */}
+              <div className="bg-white border border-cream-300 p-4 rounded flex items-center justify-between shadow-sm mb-6">
+                <div className="w-11 h-11 rounded-full bg-cream-200" />
+                <div className="flex-1 px-4 space-y-2">
+                  <div className="h-2.5 bg-cream-200 rounded w-32" />
+                  <div className="h-4 bg-cream-200 rounded w-full" />
+                </div>
+                <div className="h-3 bg-cream-200 rounded w-8" />
+              </div>
+
+              {/* Credits List Mockup */}
+              <div className="border-t border-cream-300 pt-6 mt-6 space-y-4">
+                {[1, 2, 3, 4, 5].map((idx) => (
+                  <div key={idx} className="flex justify-between border-b border-cream-300/60 pb-3">
+                    <div className="h-3 bg-cream-200 rounded w-24" />
+                    <div className="h-3 bg-cream-200 rounded w-32" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const isCurrent = currentSong && currentSong._id === song._id;
   const isCurrentPlaying = isCurrent && isPlaying;
-  const [copied, setCopied] = useState(false);
 
   // Credits matching Midhun Saji Ram's editorial styling
   const credits = {
@@ -20,10 +76,38 @@ export default function WorkDetailPage({ song, onBackClick, onPlayClick, current
     mastered: 'Kochi Digital Labs'
   };
 
+  const fallbackCopyText = (text) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";  // Avoid scrolling to bottom
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+    }
+    document.body.removeChild(textArea);
+  };
+
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const shareUrl = window.location.href;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch(err => {
+          console.error('Clipboard copy failed:', err);
+          fallbackCopyText(shareUrl);
+        });
+    } else {
+      fallbackCopyText(shareUrl);
+    }
   };
 
   return (

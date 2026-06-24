@@ -1,16 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ZoomIn, ChevronLeft, ChevronRight } from 'lucide-react';
 
-export default function GallerySection({ galleryItems = [], onViewAllClick }) {
+export default function GallerySection({ galleryItems = [], onViewAllClick, infiniteScroll = false, loading }) {
   const [activeCategory, setActiveCategory] = useState('All');
   const [selectedIdx, setSelectedIdx] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(infiniteScroll ? 8 : galleryItems.length);
 
   const categories = ['All', 'Concerts', 'Studio', 'Personal'];
-
-  const filteredItems = activeCategory === 'All'
-    ? galleryItems
-    : galleryItems.filter(item => item.category.toLowerCase() === activeCategory.toLowerCase());
 
   // Asymmetric Bento Grid layout spans modulo mapping
   const getBentoClasses = (index) => {
@@ -28,6 +25,90 @@ export default function GallerySection({ galleryItems = [], onViewAllClick }) {
     ];
     return layouts[index % layouts.length];
   };
+
+  const filteredItems = activeCategory === 'All'
+    ? galleryItems
+    : galleryItems.filter(item => item.category.toLowerCase() === activeCategory.toLowerCase());
+
+  // Reset or adjust visible count on filters or prop changes
+  useEffect(() => {
+    if (infiniteScroll) {
+      setVisibleCount(8);
+    } else {
+      setVisibleCount(galleryItems.length);
+    }
+  }, [activeCategory, galleryItems.length, infiniteScroll]);
+
+  // Load more on intersection observer trigger
+  useEffect(() => {
+    if (!infiniteScroll || visibleCount >= filteredItems.length) return;
+
+    const sentinel = document.getElementById('gallery-load-more-sentinel');
+    if (!sentinel) return;
+
+    const callback = (entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting) {
+        // Load next batch of images
+        setVisibleCount(prev => Math.min(prev + 4, filteredItems.length));
+      }
+    };
+
+    const observer = new IntersectionObserver(callback, {
+      root: null,
+      rootMargin: '150px',
+      threshold: 0.1
+    });
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [infiniteScroll, visibleCount, filteredItems.length]);
+
+  if (loading) {
+    const count = infiniteScroll ? 8 : 6;
+    return (
+      <section id="gallery" className="relative py-14 bg-white overflow-hidden animate-pulse">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10">
+            <div className="text-left mb-4 md:mb-0">
+              <span className="text-[9px] uppercase tracking-[0.3em] text-gold-600 font-bold block mb-1">
+                Gallery
+              </span>
+              <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-tight text-charcoal-900">
+                Moments in Melody
+              </h2>
+              <div className="h-[1.5px] w-16 bg-gold-500 mt-3" />
+            </div>
+            
+            <div className="flex items-center space-x-2 border-b border-charcoal-900/10 pb-2">
+              {categories.map((cat) => (
+                <div key={cat} className="px-3 py-1.5 text-xs font-semibold text-gray-400 select-none">
+                  {cat}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[140px] md:auto-rows-[190px] gap-4 grid-flow-row-dense">
+            {Array.from({ length: count }).map((_, idx) => {
+              const bentoSpanClass = getBentoClasses(idx);
+              return (
+                <div 
+                  key={idx} 
+                  className={`${bentoSpanClass} bg-cream-200 border border-cream-300 rounded-xl`} 
+                />
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  const displayedItems = filteredItems.slice(0, visibleCount);
 
   const handleNext = (e) => {
     e.stopPropagation();
@@ -82,7 +163,7 @@ export default function GallerySection({ galleryItems = [], onViewAllClick }) {
         {/* Bento Grid layout container */}
         <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[140px] md:auto-rows-[190px] gap-4 grid-flow-row-dense">
           <AnimatePresence mode="popLayout">
-            {filteredItems.map((item, idx) => {
+            {displayedItems.map((item, idx) => {
               const bentoSpanClass = getBentoClasses(idx);
               return (
                 <motion.div
@@ -132,6 +213,15 @@ export default function GallerySection({ galleryItems = [], onViewAllClick }) {
               <span>View All Gallery</span>
               <span className="group-hover:translate-x-1.5 transition-transform duration-300">&rarr;</span>
             </button>
+          </div>
+        )}
+
+        {/* Load More Sentinel for Gallery Page */}
+        {infiniteScroll && visibleCount < filteredItems.length && (
+          <div id="gallery-load-more-sentinel" className="text-center py-10">
+            <span className="text-[10px] uppercase tracking-[0.2em] text-gold-600 font-bold animate-pulse">
+              Loading more moments...
+            </span>
           </div>
         )}
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, useScroll, useSpring, useTransform, motion } from 'framer-motion';
 import Navbar from './components/Navbar';
 import AudioPlayer from './components/AudioPlayer';
 import Home from './pages/Home';
@@ -12,6 +12,7 @@ import WorkDetailPage from './pages/WorkDetailPage';
 import CustomCursor from './components/CustomCursor';
 import { Disc, Sparkles } from 'lucide-react';
 import Lenis from 'lenis';
+import { FaSpotify, FaYoutube, FaInstagram } from 'react-icons/fa';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -26,8 +27,11 @@ export default function App() {
   const [blogs, setBlogs] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [timeline, setTimeline] = useState([]);
+  const [mediaWorks, setMediaWorks] = useState([]);
+  const [worksCategory, setWorksCategory] = useState('audio');
   const [showPlayer, setShowPlayer] = useState(false);
   const [selectedWorkId, setSelectedWorkId] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -80,194 +84,70 @@ export default function App() {
   // Fetch all public content from the API
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
-        // Fetch Songs
-        const resSongs = await fetch(`${API_URL}/songs`);
-        const songsData = await resSongs.json();
+        const [resSongs, resBlogs, resGallery, resTimeline, resMedia] = await Promise.all([
+          fetch(`${API_URL}/songs`),
+          fetch(`${API_URL}/blogs`),
+          fetch(`${API_URL}/gallery`),
+          fetch(`${API_URL}/timeline`),
+          fetch(`${API_URL}/media-works`)
+        ]);
+
+        const [songsData, blogsData, galleryData, timelineData, mediaData] = await Promise.all([
+          resSongs.json(),
+          resBlogs.json(),
+          resGallery.json(),
+          resTimeline.json(),
+          resMedia.json()
+        ]);
+
         setSongs(songsData);
         if (songsData.length > 0) {
           setCurrentSong(songsData[0]); // default first song
         }
-
-        // Fetch Blogs
-        const resBlogs = await fetch(`${API_URL}/blogs`);
-        setBlogs(await resBlogs.json());
-
-        // Fetch Gallery
-        const resGallery = await fetch(`${API_URL}/gallery`);
-        setGallery(await resGallery.json());
-
-        // Fetch Timeline
-        const resTimeline = await fetch(`${API_URL}/timeline`);
-        setTimeline(await resTimeline.json());
-
+        setBlogs(blogsData);
+        setGallery(galleryData);
+        setTimeline(timelineData);
+        setMediaWorks(mediaData);
       } catch (error) {
-        console.warn('API connection failed. Booting client in Offline/Demo Mode with mock database.');
-        loadMockFallback();
+        console.error('API connection failed:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  // Populates data immediately if backend is offline or slow
-  const loadMockFallback = () => {
-    const mockSongs = [
-      {
-        _id: 'song_1',
-        title: 'Ennin Nenjil',
-        category: 'Single',
-        coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=600&auto=format&fit=crop',
-        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-        spotifyUrl: 'https://spotify.com',
-        youtubeUrl: 'https://youtube.com',
-        releaseDate: '2024-05-15',
-        description: 'A soulful romantic track capturing the essence of longing, blending acoustic guitars with modern orchestral arrangements.',
-        isFeatured: true
-      },
-      {
-        _id: 'song_2',
-        title: 'Marayuthe',
-        category: 'Single',
-        coverUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=600&auto=format&fit=crop',
-        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
-        spotifyUrl: 'https://spotify.com',
-        youtubeUrl: 'https://youtube.com',
-        releaseDate: '2023-11-10',
-        description: 'An emotional ballad speaking of memory and distance. Features a haunting flute prelude and heavy string sections.',
-        isFeatured: true
-      },
-      {
-        _id: 'song_3',
-        title: 'Mazhayile',
-        category: 'Single',
-        coverUrl: 'https://images.unsplash.com/photo-1487180142328-0c4e37023af5?q=80&w=600&auto=format&fit=crop',
-        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
-        spotifyUrl: 'https://spotify.com',
-        youtubeUrl: 'https://youtube.com',
-        releaseDate: '2024-04-12',
-        description: 'A rain-themed classical-fusion song, dedicated to the memories of childhood and the rhythms of nature.',
-        isFeatured: true
-      },
-      {
-        _id: 'song_4',
-        title: 'Kathirinte Pookkal',
-        category: 'Single',
-        coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=600&auto=format&fit=crop',
-        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3',
-        spotifyUrl: 'https://spotify.com',
-        youtubeUrl: 'https://youtube.com',
-        releaseDate: '2022-08-20',
-        description: 'A fast-paced semi-classical composition focusing on dynamic rhythm loops and layered vocals.',
-        isFeatured: false
-      },
-      {
-        _id: 'song_5',
-        title: 'Oru Mazha',
-        category: 'Album',
-        coverUrl: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=600&auto=format&fit=crop',
-        audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3',
-        spotifyUrl: 'https://spotify.com',
-        youtubeUrl: 'https://youtube.com',
-        releaseDate: '2021-12-01',
-        description: 'The award-winning debut music album featuring 8 tracks of pure melodic bliss and independent storytelling.',
-        isFeatured: true
-      }
-    ];
-
-    const mockBlogs = [
-      {
-        _id: 'blog_1',
-        title: 'The Song That Still Carries His Name',
-        slug: 'the-song-that-still-carries-his-name',
-        excerpt: 'Some songs do not end when the final note fades. They echo across generations, bridging a father\'s genius with a son\'s voice.',
-        content: '<p>Every time I sit at the harmonium, I feel his presence. My father, Saji Ram, wasn\'t just a composer; he was a painter of emotions through music. The melodies he created for classics like <em>Kireedam</em> defined an era of storytelling in Malayalam cinema.</p><p>Today, as I compose my own tracks, I try to capture that same honesty. "Ennin Nenjil" is directly inspired by a notebook of sketches he left behind. The main melody hook was written in his handwriting, on a yellowed piece of paper dated 1989. For me, singing this song is not just a performance—it is a spiritual conversation with the man who gave me my voice.</p>',
-        coverUrl: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=1000&auto=format&fit=crop',
-        category: 'Legacy',
-        isPublished: true,
-        readingTime: '4 mins',
-        createdAt: new Date('2024-05-15')
-      },
-      {
-        _id: 'blog_2',
-        title: 'What I Learned Watching Music Being Created',
-        slug: 'what-i-learned-watching-music-being-created',
-        excerpt: 'Lessons from my earliest classroom—watching my father compose in quiet studios filled with analog tapes and raw passion.',
-        content: '<p>In the nineties, recording studios were different. There were no undo buttons. Every musician had to perform in perfect harmony, in real time. I remember sitting in the corner of the studio, breathing in the smell of magnetic tapes, completely transfixed.</p><p>My father had a unique rule: "Never compose a song to impress musicians; compose it to comfort a broken heart." He taught me that complexity is cheap, but simplicity is sacred. That philosophy is the foundation of my work today. It is why I prioritize acoustic instruments and raw vocal takes over excessive digital correction.</p>',
-        coverUrl: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=1000&auto=format&fit=crop',
-        category: 'BTS',
-        isPublished: true,
-        readingTime: '3 mins',
-        createdAt: new Date('2024-04-28')
-      },
-      {
-        _id: 'blog_3',
-        title: 'Finding My Own Voice',
-        slug: 'finding-my-own-voice',
-        excerpt: 'A personal journey of stepping out from a legendary shadow to discover my own musical language and creative expression.',
-        content: '<p>For years, I was afraid of composition. Being Saji Ram\'s son meant that everything I wrote would be compared to a legend. It took me a long time to realize that legacy is not a cage; it is a springboard.</p><p>My breakthrough came with the album <em>Oru Mazha</em>. I decided to blend electronic synth pads with classical Carnatic ragas. It was a risk, and it sounded nothing like my father\'s work. But when I played the final master, a close friend of my father smiled and said: "Saji would have loved this. It has his spirit, but it is entirely yours." That was the day I found my own path.</p>',
-        coverUrl: 'https://images.unsplash.com/photo-1510915228340-29c85a43dcfe?q=80&w=1000&auto=format&fit=crop',
-        category: 'Reflection',
-        isPublished: true,
-        readingTime: '5 mins',
-        createdAt: new Date('2024-04-10')
-      },
-      {
-        _id: 'blog_4',
-        title: 'The Silence Before a Song',
-        slug: 'the-silence-before-a-song',
-        excerpt: 'Where every melody is first born. Exploring the importance of stillness and meditation in the creative composition process.',
-        content: '<p>We live in a loud world. But music doesn\'t begin with sound; it begins with silence. The most important note in any score is the pause. In classical composition, we call it the space between pulses.</p><p>Every morning, before I touch my keyboard or guitar, I spend an hour in complete silence. I listen to the wind, the hum of the house, and the rhythm of my own breathing. In that quietness, melodies present themselves. It\'s almost as if the music already exists, and my only job is to be silent enough to hear it.</p>',
-        coverUrl: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?q=80&w=1000&auto=format&fit=crop',
-        category: 'Reflection',
-        isPublished: true,
-        readingTime: '3 mins',
-        createdAt: new Date('2024-03-20')
-      }
-    ];
-
-    const mockGallery = [
-      { _id: 'gal_1', title: 'Live Performance at Grand Arena', url: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80', category: 'Concerts' },
-      { _id: 'gal_2', title: 'Acoustic Session at Studio A', url: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80', category: 'Studio' },
-      { _id: 'gal_3', title: 'Synthesizer and Composing setup', url: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80', category: 'Studio' },
-      { _id: 'gal_4', title: 'Singing live at National Music Fest', url: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80', category: 'Concerts' },
-      { _id: 'gal_5', title: 'Writing session notes', url: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80', category: 'Personal' },
-      { _id: 'gal_6', title: 'Grand Piano close-up', url: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?q=80', category: 'Studio' },
-      { _id: 'gal_7', title: 'Crowd at Concert', url: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80', category: 'Concerts' },
-      { _id: 'gal_8', title: 'Electric Guitar tuning', url: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80', category: 'Concerts' },
-      { _id: 'gal_9', title: 'Studio Mixing Board', url: 'https://images.unsplash.com/photo-1487180142328-0c4e37023af5?q=80', category: 'Studio' },
-      { _id: 'gal_10', title: 'Outdoor Inspiration Session', url: 'https://images.unsplash.com/photo-1510915228340-29c85a43dcfe?q=80', category: 'Personal' },
-      { _id: 'gal_11', title: 'Harmonium Practice', url: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?q=80', category: 'Personal' },
-      { _id: 'gal_12', title: 'Vocal recording booth', url: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80', category: 'Studio' },
-      { _id: 'gal_13', title: 'Symphony orchestra violinists', url: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80', category: 'Concerts' },
-      { _id: 'gal_14', title: 'Sunset Melody Writing', url: 'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?q=80', category: 'Personal' },
-      { _id: 'gal_15', title: 'Backstage warmups', url: 'https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80', category: 'Concerts' }
-    ];
-
-    const mockTimeline = [
-      { year: '1998', title: 'Where it all began', description: 'Surrounded by music, instruments and endless curiosity.', image: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=400' },
-      { year: '2008', title: 'Learning. Observing. Absorbing.', description: 'Learning not just music, but emotion, discipline and silence.', image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=400' },
-      { year: '2016', title: 'Finding my voice', description: 'Stepping into studios, compositions and my own sound.', image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=400' },
-      { year: '2023', title: 'Creating. Performing. Inspiring.', description: 'Continuing the legacy and building a new musical tomorrow.', image: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=400' }
-    ];
-
-    setSongs(mockSongs);
-    setCurrentSong(mockSongs[0]);
-    setBlogs(mockBlogs);
-    setGallery(mockGallery);
-    setTimeline(mockTimeline);
-  };
-
-  // Auto-show player when a song is actively played
-  useEffect(() => {
-    if (currentSong && isPlaying) {
-      setShowPlayer(true);
-    }
-  }, [currentSong, isPlaying]);
+  const { scrollYProgress } = useScroll();
+  const pageScaleX = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
+  const pageProgressWidth = useTransform(pageScaleX, [0, 1], ["0%", "100%"]);
+  const pageNoteOpacity = useTransform(pageScaleX, [0, 0.01], [0, 1]);
 
   return (
     <div className="bg-white min-h-screen text-charcoal-900 font-sans overflow-x-hidden selection:bg-gold-500 selection:text-white">
       
+      {/* Scroll Progress Bar at the top of the page (visible on mobile/small screens) */}
+      <div className="fixed top-0 left-0 right-0 h-[3px] bg-cream-300/10 z-[9999] md:hidden pointer-events-none">
+        <motion.div 
+          className="relative h-full bg-black shadow-[0_0_8px_rgba(0,0,0,0.25),0_0_15px_rgba(0,0,0,0.15)]"
+          style={{ width: pageProgressWidth }}
+        >
+          {/* Music Note Symbol at the end */}
+          <motion.div 
+            className="absolute right-[-6px] top-[-5px] text-black drop-shadow-[0_0_4px_rgba(0,0,0,0.3)] text-[10px] font-bold"
+            style={{ opacity: pageNoteOpacity }}
+          >
+            🎵
+          </motion.div>
+        </motion.div>
+      </div>
+
       {/* Luxury Brand Mouse Follower */}
       <CustomCursor />
 
@@ -277,35 +157,43 @@ export default function App() {
         setActiveSection={setActiveSection} 
         currentPath={currentPath}
         navigate={navigate}
+        onSelectCategory={setWorksCategory}
       />
 
       {/* Main Portfolio Content */}
       {(() => {
-        switch (currentPath) {
+        switch (currentPath.split('?')[0]) {
           case '/about':
             return (
               <AboutPage 
                 timelineData={timeline} 
                 onStoryClick={() => navigate('/blog')}
                 onExploreClick={() => navigate('/works')}
+                loading={loading}
               />
             );
           case '/works':
             return (
               <WorksPage 
                 songs={songs}
+                mediaWorks={mediaWorks}
+                worksCategory={worksCategory}
+                setWorksCategory={setWorksCategory}
                 currentSong={currentSong}
                 isPlaying={isPlaying}
                 onSongSelect={setCurrentSong}
                 setIsPlaying={setIsPlaying}
                 onWorkClick={(song) => {
                   setSelectedWorkId(song._id);
-                  navigate('/work-detail');
+                  navigate(`/work-detail?id=${song._id}`);
                 }}
+                loading={loading}
               />
             );
           case '/work-detail':
-            const detailedSong = songs.find(s => s._id === selectedWorkId) || songs[0];
+            const queryParams = new URLSearchParams(window.location.search);
+            const songId = queryParams.get('id') || selectedWorkId;
+            const detailedSong = songs.find(s => s._id === songId) || songs[0];
             return (
               <WorkDetailPage 
                 song={detailedSong} 
@@ -320,12 +208,13 @@ export default function App() {
                 }}
                 currentSong={currentSong}
                 isPlaying={isPlaying}
+                loading={loading}
               />
             );
           case '/blog':
-            return <BlogPage blogs={blogs} />;
+            return <BlogPage blogs={blogs} loading={loading} />;
           case '/gallery':
-            return <GalleryPage gallery={gallery} />;
+            return <GalleryPage gallery={gallery} loading={loading} />;
           case '/contact':
             return <ContactPage />;
           case '/':
@@ -333,6 +222,7 @@ export default function App() {
             return (
               <Home 
                 songs={songs}
+                mediaWorks={mediaWorks}
                 blogs={blogs}
                 gallery={gallery}
                 timeline={timeline}
@@ -341,91 +231,91 @@ export default function App() {
                 onSongSelect={setCurrentSong}
                 setIsPlaying={setIsPlaying}
                 navigate={navigate}
+                onSelectCategory={setWorksCategory}
                 onWorkClick={(song) => {
                   setSelectedWorkId(song._id);
-                  navigate('/work-detail');
+                  navigate(`/work-detail?id=${song._id}`);
                 }}
+                loading={loading}
               />
             );
         }
       })()}
 
       {/* Luxury Brand Editorial Footer */}
-      <footer className="bg-cream-100 border-t border-cream-300/60 py-16 text-xs text-gray-500">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10">
+      <footer className="bg-neutral-950 text-neutral-400 py-16 border-t border-white/5 relative z-10 font-outfit">
+        <div className="max-w-6xl mx-auto px-6 grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
           
-          {/* Brand Column */}
-          <div className="text-left flex flex-col justify-start">
-            <span className="font-serif text-charcoal-900 font-extrabold tracking-widest text-lg uppercase block">
-              Midhun Saji Ram
-            </span>
-            <span className="text-[9px] tracking-[0.25em] text-gold-600 font-bold mt-1 uppercase block">
-              Music Director & Artist
-            </span>
-            <p className="mt-4 text-gray-500 leading-relaxed font-light max-w-xs text-[11px]">
-              Weaving cinematic scores, independent records, and the musical legacy of Saji Ram into contemporary sonic worlds.
+          {/* Brand Stack (Span 5) */}
+          <div className="md:col-span-5 text-left space-y-5">
+            <div>
+              <span className="font-outfit text-white font-black tracking-[0.05em] text-base uppercase block leading-none">
+                Midhun Saji Ram
+              </span>
+              <span className="text-[8px] tracking-[0.25em] text-gold-500 font-bold mt-1.5 uppercase block font-mono">
+                Music Director & Composer
+              </span>
+            </div>
+            
+            <p className="text-neutral-500 leading-relaxed font-light text-[11px] max-w-xs">
+              Bridging classical compositions and experimental soundscapes with contemporary cinematic storytelling.
             </p>
+
+            {/* Social channels stack */}
+            <div className="flex space-x-3 text-neutral-500 pt-2">
+              {[
+                { icon: <FaSpotify size={14} />, url: 'https://spotify.com' },
+                { icon: <FaYoutube size={14} />, url: 'https://youtube.com' },
+                { icon: <FaInstagram size={14} />, url: 'https://instagram.com' }
+              ].map((item, index) => (
+                <a 
+                  key={index} 
+                  href={item.url} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-7 h-7 bg-white/5 border border-white/5 hover:border-gold-500 rounded flex items-center justify-center hover:text-white transition-all duration-300"
+                >
+                  {item.icon}
+                </a>
+              ))}
+            </div>
           </div>
 
-          {/* Navigation Links Column */}
-          <div className="text-left">
-            <h4 className="text-[10px] uppercase tracking-[0.2em] text-charcoal-900 font-bold mb-4">Navigation</h4>
-            <ul className="space-y-2.5 font-medium text-[11px]">
+          {/* Spacer */}
+          <div className="hidden md:block md:col-span-1"></div>
+
+          {/* Navigation Column (Span 3) */}
+          <div className="md:col-span-3 text-left">
+            <h4 className="text-[8.5px] uppercase tracking-[0.2em] text-white font-bold mb-4 font-mono">Navigation</h4>
+            <ul className="space-y-2.5 text-[10px] tracking-wider uppercase font-bold text-neutral-400">
               <li>
-                <button onClick={() => navigate('/')} className="hover:text-gold-500 transition-colors cursor-pointer text-left">Home</button>
+                <button onClick={() => navigate('/')} className="hover:text-white transition-colors cursor-pointer text-left">Home</button>
               </li>
               <li>
-                <button onClick={() => navigate('/about')} className="hover:text-gold-500 transition-colors cursor-pointer text-left">About & Timeline</button>
+                <button onClick={() => navigate('/about')} className="hover:text-white transition-colors cursor-pointer text-left">About & Journey</button>
               </li>
               <li>
-                <button onClick={() => navigate('/works')} className="hover:text-gold-500 transition-colors cursor-pointer text-left">Compositions</button>
+                <button onClick={() => navigate('/works')} className="hover:text-white transition-colors cursor-pointer text-left">Compositions</button>
               </li>
               <li>
-                <button onClick={() => navigate('/blog')} className="hover:text-gold-500 transition-colors cursor-pointer text-left">Stories</button>
+                <button onClick={() => navigate('/blog')} className="hover:text-white transition-colors cursor-pointer text-left">Reflections</button>
               </li>
               <li>
-                <button onClick={() => navigate('/gallery')} className="hover:text-gold-500 transition-colors cursor-pointer text-left">Gallery</button>
+                <button onClick={() => navigate('/gallery')} className="hover:text-white transition-colors cursor-pointer text-left">Visual Gallery</button>
               </li>
             </ul>
           </div>
 
-          {/* Social Channels Column */}
-          <div className="text-left">
-            <h4 className="text-[10px] uppercase tracking-[0.2em] text-charcoal-900 font-bold mb-4">Connect</h4>
-            <ul className="space-y-2.5 font-medium text-[11px]">
-              <li>
-                <a href="https://spotify.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-500 transition-colors flex items-center gap-1.5">
-                  <span>Spotify Profile</span>
-                </a>
-              </li>
-              <li>
-                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-500 transition-colors flex items-center gap-1.5">
-                  <span>YouTube Channel</span>
-                </a>
-              </li>
-              <li>
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-500 transition-colors flex items-center gap-1.5">
-                  <span>Instagram</span>
-                </a>
-              </li>
-              <li>
-                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold-500 transition-colors flex items-center gap-1.5">
-                  <span>Facebook</span>
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact Details Column */}
-          <div className="text-left flex flex-col justify-start">
-            <h4 className="text-[10px] uppercase tracking-[0.2em] text-charcoal-900 font-bold mb-4">Inquiries</h4>
-            <p className="text-gray-600 font-light leading-relaxed mb-2 text-[11px]">
-              For scoring, composition, and performance bookings:
+          {/* Contact Details Column (Span 3) */}
+          <div className="md:col-span-3 text-left">
+            <h4 className="text-[8.5px] uppercase tracking-[0.2em] text-white font-bold mb-4 font-mono">Inquiries</h4>
+            <p className="text-neutral-500 font-light leading-relaxed mb-2 text-[11px]">
+              For scores, bookings, and collaborations:
             </p>
-            <a href="mailto:bookings@midhunsajiram.com" className="text-charcoal-900 font-semibold hover:text-gold-500 transition-colors text-[11px] block">
+            <a href="mailto:bookings@midhunsajiram.com" className="text-white hover:text-gold-500 transition-colors text-[11px] font-bold block font-mono">
               bookings@midhunsajiram.com
             </a>
-            <span className="text-gray-400 text-[10px] mt-3 font-mono block">
+            <span className="text-neutral-500 text-[10px] mt-2 block font-mono">
               Kochi, Kerala, India
             </span>
           </div>
@@ -433,16 +323,23 @@ export default function App() {
         </div>
 
         {/* Bottom copyright stamp */}
-        <div className="max-w-7xl mx-auto px-6 border-t border-cream-300/40 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-gray-400">
-          <div className="flex items-center space-x-1">
-            <span>&copy; {new Date().getFullYear()} Midhun Saji Ram. All Rights Reserved.</span>
+        <div className="max-w-6xl mx-auto px-6 border-t border-white/5 mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[9px] text-neutral-500 font-mono tracking-wider">
+          <div>
+            <span>&copy; {new Date().getFullYear()} MIDHUN SAJI RAM. ALL RIGHTS RESERVED.</span>
           </div>
-
-          {/* <div className="flex items-center space-x-1.5 uppercase tracking-widest font-semibold text-gray-400">
-            <span>Designed with</span>
-            <Sparkles size={10} className="text-gold-500 animate-pulse" />
-            <span>Passion for Music</span>
-          </div> */}
+          
+          <div className="flex items-center space-x-2 text-[8px] uppercase tracking-widest font-bold text-neutral-500">
+            <span>TERMS</span>
+            <span>&bull;</span>
+            <span>PRIVACY</span>
+            <span>&bull;</span>
+            <button 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              BACK TO TOP &uarr;
+            </button>
+          </div>
         </div>
       </footer>
 

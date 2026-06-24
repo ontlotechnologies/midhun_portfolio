@@ -68,7 +68,7 @@ export default function AboutSection({ onActionClick }) {
                 key={index}
                 initial={{ opacity: 0, x: 30, y: 15, scale: 0.97 }}
                 whileInView={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-                viewport={{ once: false, amount: 0.05 }}
+                viewport={{ once: true, amount: 0.05 }}
                 whileHover={{ x: 8 }}
                 transition={{ 
                   type: "spring",

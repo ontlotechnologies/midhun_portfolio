@@ -1,6 +1,13 @@
-require('dns').setDefaultResultOrder('ipv4first');
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch (e) {
+  console.warn('Warning: Could not set DNS servers. Falling back to default system DNS.', e.message);
+}
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -13,35 +20,35 @@ const MONGO_URI = process.env.MONGO_URI || '';
 // Middlewares
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // MongoDB connection
-let isDbConnected = false;
-if (MONGO_URI) {
-  console.log('Connecting to MongoDB...');
-  mongoose.connect(MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => {
-    console.log('MongoDB connection established successfully.');
-    isDbConnected = true;
-    
-    // Seed default admin and content if database is empty
-    require('./seed')();
-  })
-  .catch((err) => {
-    console.error('Error connecting to MongoDB:', err.message);
-    console.log('Server will run in Demo Mode using in-memory state.');
-  });
-} else {
-  console.log('No MONGO_URI provided in environment. Server will run in Demo Mode with in-memory state.');
+if (!MONGO_URI) {
+  console.error('Fatal Error: MONGO_URI is not defined in the environment variables.');
+  process.exit(1);
 }
+
+console.log('Connecting to MongoDB...');
+mongoose.connect(MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => {
+  console.log('MongoDB connection established successfully.');
+  
+  // Seed default admin and content if database is empty
+  require('./seed')();
+})
+.catch((err) => {
+  console.error('Fatal Error: Failed to connect to MongoDB:', err.message);
+  process.exit(1);
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
-    database: isDbConnected ? 'connected' : 'running in-memory (demo mode)',
+    database: 'connected',
     timestamp: new Date()
   });
 });

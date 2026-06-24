@@ -1,31 +1,40 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-gold-50: #fdfbf4;
-  --color-gold-100: #faf4db;
-  --color-gold-200: #f3e5b3;
-  --color-gold-300: #ebd182;
-  --color-gold-400: #e0b852;
-  --color-gold-500: #d4af37; /* Warm Gold */
-  --color-gold-600: #b89225;
-  --color-gold-700: #96731c;
-  --color-gold-800: #775917;
-  --color-gold-900: #594212;
+  --color-gold-50: #f0f7ff;
+  --color-gold-100: #e0f2fe;
+  --color-gold-200: #bae6fd;
+  --color-gold-300: #7dd3fc;
+  --color-gold-400: #38bdf8;
+  --color-gold-500: #2563eb; /* Primary Electric Blue */
+  --color-gold-600: #1d4ed8;
+  --color-gold-700: #1e40af;
+  --color-gold-800: #1e3a8a;
+  --color-gold-900: #172554;
   
-  --color-obsidian-950: #060608;
-  --color-obsidian-900: #0a0a0d;
-  --color-obsidian-800: #121217;
-  --color-obsidian-700: #1a1a22;
-  --color-gold-glow: rgba(212, 175, 55, 0.15);
+  --color-obsidian-950: #ffffff; /* Pure White Background */
+  --color-obsidian-900: #f8fafc; /* Stark Ultra Light Card Background */
+  --color-obsidian-850: #f1f5f9; /* Stark Secondary Light hover/bg */
+  --color-obsidian-800: #f1f5f9; /* Light Widget Background */
+  --color-obsidian-750: #e2e8f0; /* Light Border */
+  --color-obsidian-700: #cbd5e1; /* Main Light Border */
+  --color-obsidian-600: #94a3b8; /* Intermediate Border */
+  --color-obsidian-500: #64748b; /* Slate Gray text helper */
+  --color-obsidian-400: #475569;
+  --color-obsidian-300: #334155;
+  --color-obsidian-200: #1e293b;
+  --color-obsidian-100: #0f172a; /* Stark slate-900 text color */
+  
+  --color-gold-glow: rgba(37, 99, 235, 0.04);
 
-  --font-serif: "Cinzel", "Playfair Display", Georgia, serif;
-  --font-sans: "Inter", "Montserrat", system-ui, sans-serif;
+  --font-serif: "Outfit", "Inter", sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 
 :root {
-  background-color: #060608;
-  color: #eaeaea;
+  background-color: #ffffff;
+  color: #0f172a;
   font-family: var(--font-sans);
 }
 
@@ -34,8 +43,8 @@ body {
   padding: 0;
   min-height: 100vh;
   overflow-x: hidden;
-  background-color: #060608;
-  color: #eaeaea;
+  background-color: #ffffff;
+  color: #0f172a;
 }
 
 /* Scrollbars */
@@ -44,37 +53,56 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #060608;
+  background: #ffffff;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2b261b;
+  background: #cbd5e1;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #d4af37;
+  background: #2563eb;
 }
 
 /* Glass panel */
 .glass-panel {
-  background: rgba(18, 18, 23, 0.6);
+  background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(212, 175, 55, 0.06);
+  border: 1px solid rgba(37, 99, 235, 0.08);
 }
 
 .text-gold-gradient {
-  background: linear-gradient(135deg, #f3e5b3 0%, #d4af37 50%, #aa7c11 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #2563eb 50%, #1d4ed8 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .glow-card {
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(212, 175, 55, 0.05);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(37, 99, 235, 0.06);
 }
 
 .glow-card-active {
-  border-color: rgba(212, 175, 55, 0.25);
-  box-shadow: 0 0 25px rgba(212, 175, 55, 0.08);
+  border-color: rgba(37, 99, 235, 0.25);
+  box-shadow: 0 0 25px rgba(37, 99, 235, 0.04);
+}
+
+/* Dynamic audio bars preview for dashboard sidebar */
+.bar-visualizer {
+  display: inline-block;
+  width: 2.5px;
+  height: 2px;
+  background-color: #2563eb;
+  margin: 0 1px;
+  border-radius: 1px;
+}
+
+.animate-music-bar {
+  animation: bounceBar 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes bounceBar {
+  0% { height: 4px; }
+  100% { height: 20px; }
 }

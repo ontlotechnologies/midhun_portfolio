@@ -71,6 +71,25 @@ const MediaWorkSchema = new mongoose.Schema({
   isFeatured: { type: Boolean, default: false }
 }, { timestamps: true });
 
+// SiteContent Schema - Dynamic page content sections
+const SiteContentSchema = new mongoose.Schema({
+  section: { type: String, required: true, unique: true }, // e.g. 'hero', 'about', 'father_legacy', 'footer', 'faqs'
+  data: { type: mongoose.Schema.Types.Mixed, required: true }
+}, { timestamps: true });
+
+// Visit Schema - Client-side Analytics
+const VisitSchema = new mongoose.Schema({
+  timestamp: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+// Asset Schema - Track uploaded file sizes from Cloudinary
+const AssetSchema = new mongoose.Schema({
+  url: { type: String, required: true, unique: true },
+  bytes: { type: Number, required: true },
+  resourceType: { type: String, required: true }, // 'image', 'audio', 'video', 'other'
+  fileName: { type: String, default: '' }
+}, { timestamps: true });
+
 module.exports = {
   Song: mongoose.model('Song', SongSchema),
   Blog: mongoose.model('Blog', BlogSchema),
@@ -78,5 +97,8 @@ module.exports = {
   TimelineEvent: mongoose.model('TimelineEvent', TimelineSchema),
   ContactMessage: mongoose.model('ContactMessage', MessageSchema),
   Admin: mongoose.model('Admin', AdminSchema),
-  MediaWork: mongoose.model('MediaWork', MediaWorkSchema)
+  MediaWork: mongoose.model('MediaWork', MediaWorkSchema),
+  SiteContent: mongoose.model('SiteContent', SiteContentSchema),
+  Visit: mongoose.model('Visit', VisitSchema),
+  Asset: mongoose.model('Asset', AssetSchema)
 };

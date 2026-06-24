@@ -32,6 +32,7 @@ export default function App() {
   const [showPlayer, setShowPlayer] = useState(false);
   const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [siteContent, setSiteContent] = useState({});
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -81,25 +82,39 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Log real client-side visitor analytics view
+  useEffect(() => {
+    const logVisit = async () => {
+      try {
+        await fetch(`${API_URL}/analytics/visit`, { method: 'POST' });
+      } catch (err) {
+        console.error('Visitor analytics tracking failed:', err);
+      }
+    };
+    logVisit();
+  }, []);
+
   // Fetch all public content from the API
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [resSongs, resBlogs, resGallery, resTimeline, resMedia] = await Promise.all([
+        const [resSongs, resBlogs, resGallery, resTimeline, resMedia, resSiteContent] = await Promise.all([
           fetch(`${API_URL}/songs`),
           fetch(`${API_URL}/blogs`),
           fetch(`${API_URL}/gallery`),
           fetch(`${API_URL}/timeline`),
-          fetch(`${API_URL}/media-works`)
+          fetch(`${API_URL}/media-works`),
+          fetch(`${API_URL}/site-content`)
         ]);
 
-        const [songsData, blogsData, galleryData, timelineData, mediaData] = await Promise.all([
+        const [songsData, blogsData, galleryData, timelineData, mediaData, siteContentData] = await Promise.all([
           resSongs.json(),
           resBlogs.json(),
           resGallery.json(),
           resTimeline.json(),
-          resMedia.json()
+          resMedia.json(),
+          resSiteContent.json()
         ]);
 
         setSongs(songsData);
@@ -110,6 +125,9 @@ export default function App() {
         setGallery(galleryData);
         setTimeline(timelineData);
         setMediaWorks(mediaData);
+        if (siteContentData.success && siteContentData.content) {
+          setSiteContent(siteContentData.content);
+        }
       } catch (error) {
         console.error('API connection failed:', error);
       } finally {
@@ -170,6 +188,7 @@ export default function App() {
                 onStoryClick={() => navigate('/blog')}
                 onExploreClick={() => navigate('/works')}
                 loading={loading}
+                siteContent={siteContent}
               />
             );
           case '/works':
@@ -237,6 +256,7 @@ export default function App() {
                   navigate(`/work-detail?id=${song._id}`);
                 }}
                 loading={loading}
+                siteContent={siteContent}
               />
             );
         }
@@ -250,23 +270,23 @@ export default function App() {
           <div className="md:col-span-5 text-left space-y-5">
             <div>
               <span className="font-outfit text-white font-black tracking-[0.05em] text-base uppercase block leading-none">
-                Midhun Saji Ram
+                {siteContent.footer?.brandName || 'Midhun Saji Ram'}
               </span>
               <span className="text-[8px] tracking-[0.25em] text-gold-500 font-bold mt-1.5 uppercase block font-mono">
-                Music Director & Composer
+                {siteContent.footer?.brandTagline || 'Music Director & Composer'}
               </span>
             </div>
             
             <p className="text-neutral-500 leading-relaxed font-light text-[11px] max-w-xs">
-              Bridging classical compositions and experimental soundscapes with contemporary cinematic storytelling.
+              {siteContent.footer?.description || 'Bridging classical compositions and experimental soundscapes with contemporary cinematic storytelling.'}
             </p>
 
             {/* Social channels stack */}
             <div className="flex space-x-3 text-neutral-500 pt-2">
               {[
-                { icon: <FaSpotify size={14} />, url: 'https://spotify.com' },
-                { icon: <FaYoutube size={14} />, url: 'https://youtube.com' },
-                { icon: <FaInstagram size={14} />, url: 'https://instagram.com' }
+                { icon: <FaSpotify size={14} />, url: siteContent.footer?.spotifyUrl || 'https://spotify.com' },
+                { icon: <FaYoutube size={14} />, url: siteContent.footer?.youtubeUrl || 'https://youtube.com' },
+                { icon: <FaInstagram size={14} />, url: siteContent.footer?.instagramUrl || 'https://instagram.com' }
               ].map((item, index) => (
                 <a 
                   key={index} 
@@ -312,11 +332,11 @@ export default function App() {
             <p className="text-neutral-500 font-light leading-relaxed mb-2 text-[11px]">
               For scores, bookings, and collaborations:
             </p>
-            <a href="mailto:bookings@midhunsajiram.com" className="text-white hover:text-gold-500 transition-colors text-[11px] font-bold block font-mono">
-              bookings@midhunsajiram.com
+            <a href={`mailto:${siteContent.footer?.bookingEmail || 'bookings@midhunsajiram.com'}`} className="text-white hover:text-gold-500 transition-colors text-[11px] font-bold block font-mono">
+              {siteContent.footer?.bookingEmail || 'bookings@midhunsajiram.com'}
             </a>
             <span className="text-neutral-500 text-[10px] mt-2 block font-mono">
-              Kochi, Kerala, India
+              {siteContent.footer?.location || 'Kochi, Kerala, India'}
             </span>
           </div>
 

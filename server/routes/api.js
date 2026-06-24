@@ -6,10 +6,18 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { Song, Blog, GalleryItem, TimelineEvent, ContactMessage, Admin, MediaWork } = require('../models/Schemas');
+const { Song, Blog, GalleryItem, TimelineEvent, ContactMessage, Admin, MediaWork, SiteContent, Visit, Asset } = require('../models/Schemas');
 
 // JWT Secret Key (in prod should be loaded from .env)
 const JWT_SECRET = process.env.JWT_SECRET || 'MIDHUN_SAJI_RAM_SECRET_KEY_123';
+
+// Configure Cloudinary
+const cloudinary = require('cloudinary').v2;
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 // Auth Middleware
 const authMiddleware = (req, res, next) => {
@@ -47,16 +55,54 @@ const upload = multer({
   limits: { fileSize: 100 * 1024 * 1024 } // 100MB limit for video/audio
 });
 
-// File upload endpoint (requires auth)
-router.post('/upload', authMiddleware, upload.single('file'), (req, res) => {
+// File upload endpoint (requires auth) - UPLOADS TO CLOUDINARY
+router.post('/upload', authMiddleware, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No file uploaded' });
     }
-    // Return relative URL (e.g. /uploads/filename.ext)
-    const fileUrl = `/uploads/${req.file.filename}`;
-    res.json({ success: true, fileUrl });
+
+    const localFilePath = req.file.path;
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    
+    let resourceType = 'auto';
+    let assetType = 'other';
+
+    if (['.mp3', '.wav', '.m4a', '.aac', '.ogg'].includes(ext)) {
+      resourceType = 'video';
+      assetType = 'audio';
+    } else if (['.mp4', '.mov', '.avi', '.mkv', '.webm'].includes(ext)) {
+      resourceType = 'video';
+      assetType = 'video';
+    } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].includes(ext)) {
+      resourceType = 'image';
+      assetType = 'image';
+    }
+
+    const result = await cloudinary.uploader.upload(localFilePath, {
+      folder: 'midhun_portfolio',
+      resource_type: resourceType
+    });
+
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
+    }
+
+    // Save asset record to MongoDB for real-time storage metrics
+    const asset = new Asset({
+      url: result.secure_url,
+      bytes: result.bytes,
+      resourceType: assetType,
+      fileName: req.file.originalname
+    });
+    await asset.save();
+
+    res.json({ success: true, fileUrl: result.secure_url });
   } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    console.error('Cloudinary upload failed:', error);
     res.status(500).json({ success: false, message: 'Upload failed', error: error.message });
   }
 });
@@ -140,9 +186,14 @@ router.put('/songs/:id', authMiddleware, async (req, res) => {
 // Delete song
 router.delete('/songs/:id', authMiddleware, async (req, res) => {
   try {
-
-    const song = await Song.findByIdAndDelete(req.params.id);
+    const song = await Song.findById(req.params.id);
     if (!song) return res.status(404).json({ success: false, message: 'Song not found' });
+
+    // Clean up assets tracked in Asset collection
+    if (song.coverUrl) await Asset.deleteOne({ url: song.coverUrl });
+    if (song.audioUrl) await Asset.deleteOne({ url: song.audioUrl });
+
+    await Song.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Song deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete song', error: error.message });
@@ -217,9 +268,13 @@ router.put('/blogs/:id', authMiddleware, async (req, res) => {
 // Delete blog
 router.delete('/blogs/:id', authMiddleware, async (req, res) => {
   try {
-
-    const blog = await Blog.findByIdAndDelete(req.params.id);
+    const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ success: false, message: 'Blog post not found' });
+
+    // Clean up assets tracked in Asset collection
+    if (blog.coverUrl) await Asset.deleteOne({ url: blog.coverUrl });
+
+    await Blog.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Blog post deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete blog post', error: error.message });
@@ -257,9 +312,13 @@ router.post('/gallery', authMiddleware, async (req, res) => {
 // Delete gallery item
 router.delete('/gallery/:id', authMiddleware, async (req, res) => {
   try {
-
-    const item = await GalleryItem.findByIdAndDelete(req.params.id);
+    const item = await GalleryItem.findById(req.params.id);
     if (!item) return res.status(404).json({ success: false, message: 'Gallery item not found' });
+
+    // Clean up assets tracked in Asset collection
+    if (item.url) await Asset.deleteOne({ url: item.url });
+
+    await GalleryItem.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Gallery item deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete gallery item', error: error.message });
@@ -303,6 +362,21 @@ router.delete('/timeline/:id', authMiddleware, async (req, res) => {
     res.json({ success: true, message: 'Timeline event deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete timeline event', error: error.message });
+  }
+});
+
+// Update timeline event
+router.put('/timeline/:id', authMiddleware, async (req, res) => {
+  try {
+    const item = await TimelineEvent.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!item) return res.status(404).json({ success: false, message: 'Timeline event not found' });
+    res.json({ success: true, data: item });
+  } catch (error) {
+    res.status(400).json({ success: false, message: 'Failed to update timeline event', error: error.message });
   }
 });
 
@@ -359,8 +433,15 @@ router.put('/media-works/:id', authMiddleware, async (req, res) => {
 // Delete a media work (Admin only)
 router.delete('/media-works/:id', authMiddleware, async (req, res) => {
   try {
-    const work = await MediaWork.findByIdAndDelete(req.params.id);
+    const work = await MediaWork.findById(req.params.id);
     if (!work) return res.status(404).json({ success: false, message: 'Media work not found' });
+
+    // Clean up assets tracked in Asset collection
+    if (work.coverUrl) await Asset.deleteOne({ url: work.coverUrl });
+    if (work.audioUrl) await Asset.deleteOne({ url: work.audioUrl });
+    if (work.videoUrl) await Asset.deleteOne({ url: work.videoUrl });
+
+    await MediaWork.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'Media work deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to delete media work', error: error.message });
@@ -441,6 +522,47 @@ router.get('/stats', authMiddleware, async (req, res) => {
     const mediaWorkCount = await MediaWork.countDocuments();
     const messageCount = await ContactMessage.countDocuments();
     const unreadMessageCount = await ContactMessage.countDocuments({ status: 'unread' });
+    const totalVisitsCount = await Visit.countDocuments();
+
+    // Calculate dynamic visitor metrics for the last 5 days
+    const dailyVisits = [];
+    const today = new Date();
+    
+    for (let i = 4; i >= 0; i--) {
+      const start = new Date();
+      start.setDate(today.getDate() - i);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date();
+      end.setDate(today.getDate() - i);
+      end.setHours(23, 59, 59, 999);
+
+      const count = await Visit.countDocuments({
+        createdAt: { $gte: start, $lte: end }
+      });
+
+      const dateStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      dailyVisits.push({ date: dateStr, count });
+    }
+
+    // Dynamic metrics for the last 5 weeks
+    const weeklyVisits = [];
+    for (let i = 4; i >= 0; i--) {
+      const start = new Date();
+      start.setDate(today.getDate() - (i * 7));
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date();
+      end.setDate(today.getDate() - (i * 7));
+      end.setHours(23, 59, 59, 999);
+
+      const count = await Visit.countDocuments({
+        createdAt: { $gte: start, $lte: end }
+      });
+
+      const dateStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      weeklyVisits.push({ date: dateStr, count });
+    }
 
     res.json({
       success: true,
@@ -451,11 +573,102 @@ router.get('/stats', authMiddleware, async (req, res) => {
         timelineEvents: timelineCount,
         mediaWorks: mediaWorkCount,
         totalMessages: messageCount,
-        unreadMessages: unreadMessageCount
+        unreadMessages: unreadMessageCount,
+        totalVisits: totalVisitsCount,
+        dailyVisits,
+        weeklyVisits
       }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to load stats', error: error.message });
+  }
+});
+
+// Record a visitor view on the client side
+router.post('/analytics/visit', async (req, res) => {
+  try {
+    const visit = new Visit({ timestamp: new Date() });
+    await visit.save();
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to register visit', error: error.message });
+  }
+});
+
+// Get storage stats
+router.get('/storage-stats', authMiddleware, async (req, res) => {
+  try {
+    const assets = await Asset.find();
+    let totalSize = 0;
+    let audioSize = 0;
+    let videoSize = 0;
+    let imageSize = 0;
+    let otherSize = 0;
+
+    assets.forEach(asset => {
+      const size = asset.bytes || 0;
+      totalSize += size;
+      if (asset.resourceType === 'audio') {
+        audioSize += size;
+      } else if (asset.resourceType === 'video') {
+        videoSize += size;
+      } else if (asset.resourceType === 'image') {
+        imageSize += size;
+      } else {
+        otherSize += size;
+      }
+    });
+
+    res.json({
+      success: true,
+      storage: {
+        totalBytes: totalSize,
+        audioBytes: audioSize,
+        videoBytes: videoSize,
+        imageBytes: imageSize,
+        otherBytes: otherSize,
+        limitBytes: 25 * 1024 * 1024 * 1024 // 25GB Cloudinary Free storage limit
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to calculate storage stats', error: error.message });
+  }
+});
+
+/* =========================================================================
+   SITE CONTENT MANAGEMENT ROUTES (Dynamic Page Content)
+   ========================================================================= */
+
+// Get all site content sections (Public - used by client)
+router.get('/site-content', async (req, res) => {
+  try {
+    const sections = await SiteContent.find();
+    const result = {};
+    sections.forEach(s => {
+      result[s.section] = s.data;
+    });
+    res.json({ success: true, content: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch site content', error: error.message });
+  }
+});
+
+// Update or create a site content section (Admin only)
+router.put('/site-content/:section', authMiddleware, async (req, res) => {
+  try {
+    const { section } = req.params;
+    const { data } = req.body;
+    if (!data) {
+      return res.status(400).json({ success: false, message: 'Data payload is required' });
+    }
+    const updated = await SiteContent.findOneAndUpdate(
+      { section },
+      { section, data },
+      { new: true, upsert: true }
+    );
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    res.status(400).json({ success: false, message: 'Failed to update site content', error: error.message });
   }
 });
 

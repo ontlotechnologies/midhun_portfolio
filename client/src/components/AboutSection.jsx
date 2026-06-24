@@ -2,13 +2,33 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Award, Music, Users, Heart, ArrowRight } from 'lucide-react';
 
-export default function AboutSection({ onActionClick }) {
-  const stats = [
+const iconMap = {
+  Music: <Music className="text-gold-600" size={15} />,
+  Award: <Award className="text-gold-600" size={15} />,
+  Users: <Users className="text-gold-600" size={15} />,
+  Heart: <Heart className="text-gold-600" size={15} />
+};
+
+export default function AboutSection({ onActionClick, content }) {
+  const c = content || {};
+  
+  const defaultStats = [
     { icon: <Music className="text-gold-600" size={15} />, value: '50+', label: 'Songs Composed' },
     { icon: <Award className="text-gold-600" size={15} />, value: '30+', label: 'Live Performances' },
     { icon: <Users className="text-gold-600" size={15} />, value: '20+', label: 'Collaborations' },
     { icon: <Heart className="text-gold-600" size={15} />, value: 'Millions', label: 'Listeners' }
   ];
+
+  // Use dynamic stats if available, map iconName to actual icon components
+  const stats = c.stats 
+    ? c.stats.map(s => ({
+        icon: iconMap[s.iconName] || <Music className="text-gold-600" size={15} />,
+        value: s.value,
+        label: s.label
+      }))
+    : defaultStats;
+
+  const titleLines = (c.title || 'My music is a bridge\nbetween yesterday and tomorrow.').split('\n');
 
   return (
     <section id="about" className="relative py-14 bg-white overflow-hidden">
@@ -18,11 +38,15 @@ export default function AboutSection({ onActionClick }) {
         {/* Section Header */}
         <div className="mb-10 text-left">
           <span className="text-[9px] uppercase tracking-[0.3em] text-gold-600 font-bold block mb-1">
-            About Me
+            {c.subtitle || 'About Me'}
           </span>
           <h2 className="font-serif text-charcoal-900 text-3xl md:text-4xl tracking-tight leading-[1.1] font-normal">
-            My music is a bridge<br />
-            between yesterday and tomorrow.
+            {titleLines.map((line, i) => (
+              <React.Fragment key={i}>
+                {line}
+                {i < titleLines.length - 1 && <br />}
+              </React.Fragment>
+            ))}
           </h2>
           <div className="h-[1.5px] w-12 bg-gold-500 mt-3"></div>
         </div>
@@ -33,10 +57,10 @@ export default function AboutSection({ onActionClick }) {
           {/* Left Column: Narrative */}
           <div className="lg:col-span-4 text-left">
             <p className="text-charcoal-800 text-sm font-light leading-relaxed mb-4">
-              I come from a musical lineage that shaped my ears, my heart, and my understanding of sound. As a music director, I search for the emotion behind every scene, every lyric, and every silence.
+              {c.paragraph1 || "I come from a musical lineage that shaped my ears, my heart, and my understanding of sound. As a music director, I search for the emotion behind every scene, every lyric, and every silence."}
             </p>
             <p className="text-charcoal-500 text-xs font-light leading-relaxed mb-6">
-              As a singer, I give that emotion a voice. My music is rooted in melody, honesty, and feeling.
+              {c.paragraph2 || "As a singer, I give that emotion a voice. My music is rooted in melody, honesty, and feeling."}
             </p>
             
             <button
@@ -54,7 +78,7 @@ export default function AboutSection({ onActionClick }) {
               className="relative aspect-[4/3] max-w-md mx-auto rounded-sm overflow-hidden border border-cream-300 shadow-sm"
             >
               <img
-                src="/midhunBG.jpeg"
+                src={c.portraitImage || "/midhunBG.jpeg"}
                 alt="Midhun Saji Ram composing in studio"
                 className="w-full h-full object-cover filter brightness-95"
               />

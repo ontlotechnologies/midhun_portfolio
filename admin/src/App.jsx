@@ -1,10 +1,86 @@
+/* eslint-disable react/prop-types, no-unused-vars, react/no-unescaped-entities */
 import React, { useState, useEffect } from 'react';
 import { 
   LogIn, LogOut, Disc, FileText, Image, Calendar, Mail, BarChart3, 
   Plus, Trash2, CheckCircle2, Lock, Settings, Play, Pause, 
-  Users, Award, Video, Film, MessageSquare, Search, Bell, ChevronDown, Heart, Sparkles
+  Users, Award, Video, Film, MessageSquare, Search, Bell, ChevronDown, Heart, Sparkles, Save, ChevronRight, X, Edit, Tv, Clapperboard, Music,
+  Menu, Upload, Clock, Volume2, VolumeX, ChevronUp
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+
+const FormField = ({ label, children }) => (
+  <div className="flex flex-col space-y-1 text-left w-full">
+    <span className="text-[9.5px] font-bold uppercase tracking-widest text-obsidian-500">{label}</span>
+    {children}
+  </div>
+);
+
+const Input = ({ className = '', ...props }) => (
+  <input
+    {...props}
+    className={`bg-obsidian-950 border border-obsidian-700/60 focus:border-gold-500 focus:ring-1 focus:ring-gold-500/20 rounded-lg px-3 py-1.5 text-[11.5px] text-obsidian-100 placeholder-slate-500 transition-all outline-none w-full ${className}`}
+  />
+);
+
+const Textarea = ({ className = '', ...props }) => (
+  <textarea
+    {...props}
+    className={`bg-obsidian-950 border border-obsidian-700/60 focus:border-gold-500 focus:ring-1 focus:ring-gold-500/20 rounded-lg px-3 py-1.5 text-[11.5px] text-obsidian-100 placeholder-slate-500 transition-all outline-none resize-none font-sans w-full ${className}`}
+  />
+);
+
+const Select = ({ className = '', ...props }) => (
+  <select
+    {...props}
+    className={`bg-obsidian-950 border border-obsidian-700/60 focus:border-gold-500 focus:ring-1 focus:ring-gold-500/20 rounded-lg px-3 py-1.5 text-[11.5px] text-obsidian-100 transition-all outline-none cursor-pointer w-full ${className}`}
+  />
+);
+
+const FileUpload = ({ accept, onChange, label, value }) => (
+  <label className="flex items-center gap-3 border border-dashed border-obsidian-700 hover:border-gold-500/50 bg-obsidian-950 hover:bg-gold-500/5 px-4 py-3 rounded-lg cursor-pointer transition-all min-w-0 w-full select-none">
+    <Upload size={14} className="text-gold-500 shrink-0" />
+    <div className="flex-1 min-w-0 text-left">
+      <span className="text-[11px] font-semibold text-obsidian-100 block truncate">{label}</span>
+      <span className="text-[9px] text-slate-500 block truncate">
+        {value ? value.split('/').pop() : 'Click to select asset'}
+      </span>
+    </div>
+    <input type="file" accept={accept} onChange={onChange} className="hidden" />
+  </label>
+);
+
+const getTabWorkType = (tab) => {
+  switch (tab) {
+    case 'short-films': return 'short_film';
+    case 'web-series': return 'web_series';
+    case 'tv-programs': return 'tv_program';
+    case 'feature-films': return 'movie';
+    case 'independent-works': return 'independent_work';
+    default: return 'short_film';
+  }
+};
+
+const getTabLabel = (tab) => {
+  switch (tab) {
+    case 'short-films': return 'Short Films';
+    case 'web-series': return 'Web Series';
+    case 'tv-programs': return 'TV Programs';
+    case 'feature-films': return 'Feature Films';
+    case 'independent-works': return 'Independent Works';
+    default: return 'Cinematic Works';
+  }
+};
+
+const getTabSingularLabel = (tab) => {
+  switch (tab) {
+    case 'short-films': return 'Short Film';
+    case 'web-series': return 'Web Series';
+    case 'tv-programs': return 'TV Program';
+    case 'feature-films': return 'Feature Film';
+    case 'independent-works': return 'Independent Work';
+    default: return 'Cinematic Release';
+  }
+};
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('adminToken') || '');
@@ -16,17 +92,49 @@ export default function App() {
   
   // Dashboard navigation tab
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [blogPreviewMode, setBlogPreviewMode] = useState(false);
+  
+  // Content view toggles (list vs add)
+  const [songsViewMode, setSongsViewMode] = useState('list');
+  const [mediaViewMode, setMediaViewMode] = useState('list');
+  const [galleryViewMode, setGalleryViewMode] = useState('list');
+  const [timelineViewMode, setTimelineViewMode] = useState('list');
+  const [blogViewMode, setBlogViewMode] = useState('list');
+  
+  // Interactive audio instance
+  const [audio] = useState(() => {
+    const a = new Audio('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
+    a.loop = true;
+    return a;
+  });
 
   // Stats State
   const [stats, setStats] = useState({
-    songs: 58,
-    blogs: 16,
-    galleryItems: 28,
-    timelineEvents: 14,
+    songs: 0,
+    blogs: 0,
+    galleryItems: 0,
+    timelineEvents: 0,
     mediaWorks: 0,
-    totalMessages: 46,
-    unreadMessages: 12
+    totalMessages: 0,
+    unreadMessages: 0,
+    totalVisits: 0,
+    dailyVisits: [],
+    weeklyVisits: []
   });
+
+  const [storageStats, setStorageStats] = useState({
+    totalBytes: 0,
+    audioBytes: 0,
+    videoBytes: 0,
+    imageBytes: 0,
+    otherBytes: 0,
+    limitBytes: 100 * 1024 * 1024
+  });
+
+  const [streamPeriod, setStreamPeriod] = useState('This Week');
 
   // DB Lists State
   const [songs, setSongs] = useState([]);
@@ -41,6 +149,7 @@ export default function App() {
   const [blogForm, setBlogForm] = useState({ title: '', category: 'Reflection', coverUrl: '', excerpt: '', content: '', readingTime: '4 mins', isPublished: true });
   const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'image', category: 'Concerts', isFeatured: false });
   const [timelineForm, setTimelineForm] = useState({ year: '', title: '', description: '' });
+  const [editingTimelineId, setEditingTimelineId] = useState(null);
   const [mediaWorkForm, setMediaWorkForm] = useState({
     title: '',
     type: 'short_film',
@@ -55,6 +164,36 @@ export default function App() {
 
   const [independentSubtype, setIndependentSubtype] = useState('video');
 
+  // Site Content Editor State
+  const [siteContent, setSiteContent] = useState({});
+  const [activeContentSection, setActiveContentSection] = useState('hero');
+  const [contentSaving, setContentSaving] = useState(false);
+  const [contentSaveSuccess, setContentSaveSuccess] = useState('');
+
+  // Editable forms for each site content section
+  const [heroForm, setHeroForm] = useState({
+    subtitle: '', titleLine1: '', titleLine2: '', titleLine3: '',
+    description: '', quote: '', signature: '', heroImage: ''
+  });
+  const [aboutForm, setAboutForm] = useState({
+    subtitle: '', title: '', paragraph1: '', paragraph2: '',
+    portraitImage: '', stats: []
+  });
+  const [legacyForm, setLegacyForm] = useState({
+    subtitle: '', title: '', paragraph1: '', paragraph2: '',
+    mainImage: '', polaroidImage: '', polaroidCaption: '', cursiveText: ''
+  });
+  const [footerForm, setFooterForm] = useState({
+    brandName: '', brandTagline: '', description: '',
+    bookingEmail: '', location: '',
+    spotifyUrl: '', youtubeUrl: '', instagramUrl: ''
+  });
+  const [faqsForm, setFaqsForm] = useState({
+    subtitle: '', title: '', items: []
+  });
+  const [newFaqQuestion, setNewFaqQuestion] = useState('');
+  const [newFaqAnswer, setNewFaqAnswer] = useState('');
+
   // Player Preview States inside Dashboard Sidebar
   const [sidebarPlaying, setSidebarPlaying] = useState(false);
   const [sidebarProgress, setSidebarProgress] = useState(38);
@@ -65,8 +204,87 @@ export default function App() {
     if (isAuthenticated) {
       loadStats();
       loadData();
+      loadSiteContent();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, activeTab]);
+
+  useEffect(() => {
+    if (sidebarPlaying) {
+      audio.play().catch(err => console.log('Playback deferred:', err));
+    } else {
+      audio.pause();
+    }
+  }, [sidebarPlaying, audio]);
+
+  useEffect(() => {
+    const updateProgress = () => {
+      setAudioCurrentTime(audio.currentTime);
+      if (audio.duration) {
+        setAudioDuration(audio.duration);
+        setSidebarProgress((audio.currentTime / audio.duration) * 100);
+      }
+    };
+    audio.addEventListener('timeupdate', updateProgress);
+    return () => {
+      audio.removeEventListener('timeupdate', updateProgress);
+      audio.pause();
+    };
+  }, [audio]);
+
+  const handleTabSelect = (tabId) => {
+    setActiveTab(tabId);
+    setIsSidebarOpen(false);
+    if (tabId === 'songs') setSongsViewMode('list');
+    if (['media-works', 'short-films', 'web-series', 'tv-programs', 'feature-films', 'independent-works'].includes(tabId)) {
+      setMediaViewMode('list');
+      setMediaWorkForm(prev => ({
+        ...prev,
+        type: getTabWorkType(tabId)
+      }));
+    }
+    if (tabId === 'gallery') setGalleryViewMode('list');
+    if (tabId === 'timeline') setTimelineViewMode('list');
+    if (tabId === 'blog') setBlogViewMode('list');
+  };
+
+  const handleMetricClick = (tabId) => {
+    setActiveTab(tabId);
+    setIsSidebarOpen(false);
+    if (tabId === 'songs') setSongsViewMode('list');
+    if (['media-works', 'short-films', 'web-series', 'tv-programs', 'feature-films', 'independent-works'].includes(tabId)) {
+      setMediaViewMode('list');
+      setMediaWorkForm(prev => ({
+        ...prev,
+        type: getTabWorkType(tabId)
+      }));
+    }
+    if (tabId === 'gallery') setGalleryViewMode('list');
+    if (tabId === 'timeline') setTimelineViewMode('list');
+    if (tabId === 'blog') setBlogViewMode('list');
+  };
+
+  const formatBytes = (bytes) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const loadStorageStats = async () => {
+    try {
+      const res = await fetch(`${API_URL}/storage-stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success && data.storage) {
+        setStorageStats(data.storage);
+      }
+    } catch (err) {
+      console.error('Failed to load storage stats:', err);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -82,7 +300,10 @@ export default function App() {
           timelineEvents: data.stats.timelineEvents,
           mediaWorks: data.stats.mediaWorks || 0,
           totalMessages: data.stats.totalMessages,
-          unreadMessages: data.stats.unreadMessages
+          unreadMessages: data.stats.unreadMessages,
+          totalVisits: data.stats.totalVisits || 0,
+          dailyVisits: data.stats.dailyVisits || [],
+          weeklyVisits: data.stats.weeklyVisits || []
         });
       }
     } catch (err) {
@@ -113,8 +334,168 @@ export default function App() {
       if (resMessages.ok) {
         setMessages(await resMessages.json());
       }
+
+      // Automatically sync stats and storage allocations in real-time
+      loadStats();
+      loadStorageStats();
     } catch (err) {
       console.error('Failed to load data:', err);
+    }
+  };
+
+  const getStreamPlaysData = () => {
+    const isWeek = streamPeriod === 'This Week';
+    const sourceData = isWeek ? stats.dailyVisits : stats.weeklyVisits;
+    const numPoints = 5;
+
+    // Fallback if no analytics loaded yet
+    if (!sourceData || sourceData.length === 0) {
+      const emptyCoords = Array.from({ length: numPoints }, (_, idx) => ({
+        x: idx * 125,
+        y: 170,
+        val: 0
+      }));
+      return {
+        linePath: `M 0 170 C 62.5 170, 62.5 170, 125 170 C 187.5 170, 187.5 170, 250 170 C 312.5 170, 312.5 170, 375 170 C 437.5 170, 437.5 170, 500 170`,
+        glowPath: `M 0 170 C 62.5 170, 62.5 170, 125 170 C 187.5 170, 187.5 170, 250 170 C 312.5 170, 312.5 170, 375 170 C 437.5 170, 437.5 170, 500 170 L 500 200 L 0 200 Z`,
+        total: "0",
+        peak: "0",
+        peakDay: isWeek ? "Today" : "This Week",
+        days: isWeek ? ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"] : ["Week 1", "Week 2", "Week 3", "Week 4", "Week 5"],
+        coords: emptyCoords
+      };
+    }
+
+    const rawValues = sourceData.map(item => item.count);
+    const labels = sourceData.map(item => item.date);
+
+    const maxVal = Math.max(...rawValues);
+    const minVal = Math.min(...rawValues);
+    const range = maxVal - minVal || 1;
+
+    // Map to coordinates (x: 0-500, y: 50-170)
+    const coords = rawValues.map((val, idx) => {
+      const x = idx * 125;
+      const percent = range === 0 ? 0.5 : (val - minVal) / range;
+      const y = 170 - (percent * 110); // leave 50-170 space
+      return { x, y, val };
+    });
+
+    // Generate smooth bezier curve
+    let linePath = `M ${coords[0].x} ${coords[0].y}`;
+    for (let i = 1; i < coords.length; i++) {
+      const prev = coords[i-1];
+      const curr = coords[i];
+      const cpX = prev.x + (curr.x - prev.x) / 2;
+      linePath += ` C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y}`;
+    }
+
+    const glowPath = `${linePath} L 500 200 L 0 200 Z`;
+    
+    // Find index of peak
+    const peakIdx = rawValues.indexOf(maxVal);
+    const peakDay = labels[peakIdx];
+
+    const totalPlays = rawValues.reduce((a, b) => a + b, 0);
+
+    const formatPlays = (num) => {
+      if (num >= 1000000) return `${(num / 1000000).toFixed(2)}M`;
+      if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
+      return num.toString();
+    };
+
+    return {
+      linePath,
+      glowPath,
+      total: totalPlays.toLocaleString(),
+      peak: maxVal.toLocaleString(),
+      peakDay,
+      days: labels,
+      coords
+    };
+  };
+
+  const loadSiteContent = async () => {
+    try {
+      const res = await fetch(`${API_URL}/site-content`);
+      const data = await res.json();
+      if (data.success && data.content) {
+        setSiteContent(data.content);
+        // Populate forms with loaded content
+        if (data.content.hero) {
+          setHeroForm(prev => ({ ...prev, ...data.content.hero }));
+        }
+        if (data.content.about) {
+          setAboutForm(prev => ({ ...prev, ...data.content.about }));
+        }
+        if (data.content.father_legacy) {
+          setLegacyForm(prev => ({ ...prev, ...data.content.father_legacy }));
+        }
+        if (data.content.footer) {
+          setFooterForm(prev => ({ ...prev, ...data.content.footer }));
+        }
+        if (data.content.faqs) {
+          setFaqsForm(prev => ({ ...prev, ...data.content.faqs }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load site content:', err);
+    }
+  };
+
+  const saveSiteContentSection = async (section, formData) => {
+    setContentSaving(true);
+    setContentSaveSuccess('');
+    try {
+      const res = await fetch(`${API_URL}/site-content/${section}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ data: formData })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setContentSaveSuccess(section);
+        confetti({ particleCount: 40, colors: ['#2563eb', '#38bdf8', '#ffffff'], spread: 40 });
+        loadSiteContent();
+        setTimeout(() => setContentSaveSuccess(''), 3000);
+      } else {
+        alert(data.message || 'Failed to save section.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to connect to the server.');
+    } finally {
+      setContentSaving(false);
+    }
+  };
+
+  const handleSiteContentImageUpload = async (e, section, field) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success) {
+        const path = data.fileUrl;
+        if (section === 'hero') setHeroForm(prev => ({ ...prev, [field]: path }));
+        if (section === 'about') setAboutForm(prev => ({ ...prev, [field]: path }));
+        if (section === 'father_legacy') setLegacyForm(prev => ({ ...prev, [field]: path }));
+        alert('Image uploaded successfully!');
+      } else {
+        alert(data.message || 'Upload failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Upload failed: server connection issue.');
     }
   };
 
@@ -135,7 +516,7 @@ export default function App() {
         localStorage.setItem('adminToken', data.token);
         setToken(data.token);
         setIsAuthenticated(true);
-        confetti({ particleCount: 80, spread: 50, colors: ['#d4af37', '#ffffff'] });
+        confetti({ particleCount: 80, spread: 50, colors: ['#2563eb', '#38bdf8', '#ffffff'] });
       } else {
         setLoginError(data.message || 'Invalid credentials');
       }
@@ -169,8 +550,9 @@ export default function App() {
       });
       if (res.ok) {
         setSongForm({ title: '', category: 'Single', coverUrl: '', audioUrl: '', spotifyUrl: '', description: '', isFeatured: false });
+        setSongsViewMode('list');
         loadData();
-        confetti({ particleCount: 50, colors: ['#d4af37'] });
+        confetti({ particleCount: 50, colors: ['#2563eb', '#38bdf8', '#ffffff'] });
       } else {
         const data = await res.json();
         alert(data.message || 'Failed to add song.');
@@ -266,7 +648,7 @@ export default function App() {
       if (res.ok) {
         setMediaWorkForm({
           title: '',
-          type: 'short_film',
+          type: getTabWorkType(activeTab),
           coverUrl: '',
           videoUrl: '',
           audioUrl: '',
@@ -276,9 +658,10 @@ export default function App() {
           isFeatured: false
         });
         setIndependentSubtype('video');
+        setMediaViewMode('list');
         loadData();
         loadStats();
-        confetti({ particleCount: 50, colors: ['#d4af37'] });
+        confetti({ particleCount: 50, colors: ['#2563eb', '#38bdf8', '#ffffff'] });
       } else {
         const data = await res.json();
         alert(data.message || 'Failed to add media work.');
@@ -323,7 +706,9 @@ export default function App() {
       });
       if (res.ok) {
         setBlogForm({ title: '', category: 'Reflection', coverUrl: '', excerpt: '', content: '', readingTime: '4 mins', isPublished: true });
+        setBlogViewMode('list');
         loadData();
+        confetti({ particleCount: 50, colors: ['#2563eb', '#38bdf8', '#ffffff'] });
       } else {
         const data = await res.json();
         alert(data.message || 'Failed to add blog post.');
@@ -366,7 +751,9 @@ export default function App() {
       });
       if (res.ok) {
         setGalleryForm({ title: '', url: '', type: 'image', category: 'Concerts', isFeatured: false });
+        setGalleryViewMode('list');
         loadData();
+        confetti({ particleCount: 50, colors: ['#2563eb', '#38bdf8', '#ffffff'] });
       } else {
         const data = await res.json();
         alert(data.message || 'Failed to add gallery item.');
@@ -397,9 +784,12 @@ export default function App() {
 
   const handleAddTimeline = async (e) => {
     e.preventDefault();
+    const isEditing = !!editingTimelineId;
+    const url = isEditing ? `${API_URL}/timeline/${editingTimelineId}` : `${API_URL}/timeline`;
+    const method = isEditing ? 'PUT' : 'POST';
     try {
-      const res = await fetch(`${API_URL}/timeline`, {
-        method: 'POST',
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -408,15 +798,28 @@ export default function App() {
       });
       if (res.ok) {
         setTimelineForm({ year: '', title: '', description: '' });
+        setEditingTimelineId(null);
+        setTimelineViewMode('list');
         loadData();
+        confetti({ particleCount: 50, colors: ['#2563eb', '#38bdf8', '#ffffff'] });
       } else {
         const data = await res.json();
-        alert(data.message || 'Failed to add timeline event.');
+        alert(data.message || `Failed to ${isEditing ? 'update' : 'add'} timeline event.`);
       }
     } catch (err) {
       console.error(err);
       alert('Failed to connect to the server.');
     }
+  };
+
+  const handleStartEditTimeline = (evt) => {
+    setEditingTimelineId(evt._id);
+    setTimelineForm({
+      year: evt.year || '',
+      title: evt.title || '',
+      description: evt.description || ''
+    });
+    setTimelineViewMode('add');
   };
 
   const handleDeleteTimeline = async (id) => {
@@ -478,197 +881,288 @@ export default function App() {
      LOGIN SCREEN RENDER
      ========================================================================= */
 
+  const formatTime = (time) => {
+    if (isNaN(time) || !isFinite(time)) return '00:00';
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+
+
+  /* =========================================================================
+     LOGIN SCREEN RENDER
+     ========================================================================= */
+
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-obsidian-950 flex flex-col justify-center items-center px-6">
+      <div className="min-h-screen bg-obsidian-950 flex flex-col justify-center items-center px-6 relative overflow-hidden font-sans">
+        {/* Animated Radial Background Grid */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(37,99,235,0.06)_0%,transparent_75%)] pointer-events-none" />
         
-        {/* Animated Gold Starry Backdrop */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.04)_0%,transparent_70%)] pointer-events-none" />
+        {/* Floating gradient circles */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gold-500/5 rounded-full filter blur-[100px] pointer-events-none animate-pulse duration-[8s]" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full filter blur-[100px] pointer-events-none animate-pulse duration-[6s]" />
 
-        <div className="w-full max-w-md bg-obsidian-900 border border-gold-500/20 p-8 rounded-sm text-left shadow-2xl relative">
-          <div className="absolute top-[-30px] left-1/2 transform -translate-x-1/2 w-14 h-14 bg-obsidian-900 rounded-full border border-gold-500/25 flex items-center justify-center text-gold-500">
-            <Lock size={20} />
+        <div className="w-full max-w-md bg-obsidian-900/60 backdrop-blur-xl border border-obsidian-700/40 p-8 rounded-2xl text-left shadow-2xl relative z-10">
+          <div className="absolute top-[-26px] left-1/2 transform -translate-x-1/2 w-12 h-12 bg-obsidian-900 border border-gold-500/20 flex items-center justify-center text-gold-500 rounded-xl shadow-xl">
+            <Lock size={18} />
           </div>
 
-          <div className="text-center mt-3 mb-8">
-            <span className="font-serif text-gold-gradient text-2xl tracking-[0.2em] font-black block">MIDHUN SAJI RAM</span>
-            <span className="text-[9px] text-gray-500 uppercase tracking-widest mt-1 block">Administrative Dashboard CMS</span>
-            <div className="h-[1px] w-12 bg-gold-500/30 mx-auto mt-3"></div>
+          <div className="text-center mt-2 mb-8 select-none">
+            <span className="font-serif text-gold-gradient text-xl tracking-[0.2em] font-extrabold block">MIDHUN SAJI RAM</span>
+            <span className="text-[8px] text-slate-500 uppercase tracking-widest mt-1.5 block font-bold font-mono">Administrative SaaS Portal</span>
+            <div className="h-[1px] w-8 bg-gold-500/30 mx-auto mt-3.5"></div>
           </div>
 
           {loginError && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 text-xs rounded-sm mb-6 leading-relaxed">
-              {loginError}
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3.5 text-xs rounded-lg mb-6 leading-relaxed flex items-start gap-2.5">
+              <span className="mt-0.5 shrink-0 text-red-500">⚠️</span>
+              <span>{loginError}</span>
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
-            <div className="flex flex-col">
-              <label className="text-[10px] uppercase tracking-widest text-gray-400 mb-1.5 font-medium">Username</label>
-              <input
+          <form onSubmit={handleLogin} className="space-y-4">
+            <FormField label="Username">
+              <Input
                 type="text"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="bg-obsidian-950 border border-white/10 px-4 py-3 text-sm text-white rounded-sm focus:outline-none focus:border-gold-500/40 transition-colors"
-                placeholder="Enter admin username"
+                placeholder="Enter username"
               />
-            </div>
+            </FormField>
 
-            <div className="flex flex-col">
-              <label className="text-[10px] uppercase tracking-widest text-gray-400 mb-1.5 font-medium">Password</label>
-              <input
+            <FormField label="Password">
+              <Input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-obsidian-950 border border-white/10 px-4 py-3 text-sm text-white rounded-sm focus:outline-none focus:border-gold-500/40 transition-colors"
                 placeholder="Enter password"
               />
-            </div>
+            </FormField>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 bg-gold-500 hover:bg-gold-400 disabled:bg-gold-500/50 text-black font-semibold text-xs uppercase tracking-widest rounded-sm transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg shadow-gold-500/10 cursor-pointer"
+              className="w-full py-3 bg-gold-500 hover:bg-gold-600 disabled:bg-gold-500/50 text-white font-bold text-xs uppercase tracking-widest rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg shadow-gold-500/10 active:scale-[0.98] cursor-pointer mt-6"
             >
               {loading ? (
-                <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               ) : (
                 <>
                   <LogIn size={13} />
-                  <span>Access CMS Portal</span>
+                  <span>Access Dashboard</span>
                 </>
               )}
             </button>
           </form>
-
-
         </div>
       </div>
     );
   }
 
   /* =========================================================================
-     MAIN PREMIUM DASHBOARD RENDER
+     MAIN SaaS DASHBOARD RENDER
      ========================================================================= */
 
+  const streamData = getStreamPlaysData();
+  const usedPercent = Math.min(100, Math.round((storageStats.totalBytes / storageStats.limitBytes) * 100)) || 0;
+  const strokeOffset = 263.89 - (263.89 * usedPercent / 100);
+
   return (
-    <div className="min-h-screen bg-obsidian-950 text-white flex">
+    <div className="min-h-screen bg-obsidian-950 text-obsidian-200 flex overflow-hidden font-sans">
       
-      {/* 1. LEFT SIDEBAR MENU PANEL */}
-      <aside className="w-64 bg-obsidian-900 border-r border-white/5 flex flex-col justify-between p-6">
+      {/* Backdrop overlay on mobile */}
+      {isSidebarOpen && (
+        <div 
+          onClick={() => setIsSidebarOpen(false)}
+          className="fixed inset-0 bg-black/60 z-30 lg:hidden backdrop-blur-xs transition-opacity duration-300"
+        />
+      )}
+
+      {/* 1. LEFT SIDEBAR PANEL (Desktop sticky, Mobile sliding drawer) */}
+      <aside 
+        className={`fixed inset-y-0 left-0 w-60 bg-obsidian-900 border-r border-obsidian-700/40 flex flex-col justify-between p-5 z-40 transition-transform duration-300 lg:translate-x-0 lg:static lg:h-screen shrink-0 ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         
-        <div className="space-y-8 text-left">
+        <div className="space-y-6 text-left">
           {/* Logo Branding */}
-          <div className="flex flex-col">
-            <span className="font-serif text-lg tracking-[0.15em] font-extrabold text-gold-gradient">
+          <div className="flex flex-col select-none border-b border-obsidian-700/40 pb-4">
+            <span className="font-serif text-base tracking-[0.1em] font-extrabold text-gold-gradient">
               Midhun Saji Ram
             </span>
-            <span className="text-[9px] tracking-[0.35em] text-gray-400 uppercase font-light -mt-0.5">
-              Music Director | Singer
+            <span className="text-[8px] tracking-[0.25em] text-slate-400 uppercase font-bold mt-1 font-mono">
+              Artist Dashboard
             </span>
           </div>
 
-          {/* Sidebar Tabs Navigation */}
-          <nav className="space-y-1">
-            {[
-              { id: 'dashboard', label: 'Dashboard', icon: <BarChart3 size={15} /> },
-              { id: 'songs', label: 'Songs & Works', icon: <Disc size={15} /> },
-              { id: 'media-works', label: 'Media & Cinematic', icon: <Film size={15} /> },
-              { id: 'gallery', label: 'Media Gallery', icon: <Image size={15} /> },
-              { id: 'timeline', label: 'Timeline Milestones', icon: <Calendar size={15} /> },
-              { id: 'blog', label: 'Blog Reflections', icon: <FileText size={15} /> },
-              { id: 'enquiries', label: `Booking Inbox (${stats.unreadMessages})`, icon: <Mail size={15} /> }
-            ].map((tab) => (
+          {/* Structured & Grouped Sidebar Navigation */}
+          <div className="space-y-4">
+            
+            {/* OVERVIEW */}
+            <div className="space-y-1">
+              <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-500 px-3 font-mono block select-none">
+                Overview
+              </span>
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`w-full px-4 py-2.5 text-left text-xs uppercase tracking-widest font-semibold flex items-center space-x-3 transition-all rounded-sm ${activeTab === tab.id ? 'bg-gold-500 text-black font-black' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}
+                onClick={() => handleTabSelect('dashboard')}
+                className={`w-full px-3 py-2 rounded-lg text-xs uppercase tracking-wider font-bold flex items-center space-x-3 transition-all cursor-pointer ${
+                  activeTab === 'dashboard' 
+                    ? 'bg-gold-500/10 text-gold-500 border-l-2 border-gold-500 pl-2 rounded-l-none' 
+                    : 'hover:bg-obsidian-850 text-obsidian-500 hover:text-obsidian-100'
+                }`}
               >
-                {tab.icon}
-                <span>{tab.label}</span>
+                <BarChart3 size={14} />
+                <span>Dashboard</span>
               </button>
-            ))}
-          </nav>
+            </div>
+
+            {/* PORTFOLIO CONTENT */}
+            <div className="space-y-1">
+              <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-500 px-3 font-mono block select-none">
+                Portfolio Content
+              </span>
+              {[
+                { id: 'songs', label: 'Music & Songs', icon: <Music size={14} /> },
+                { id: 'short-films', label: 'Short Films', icon: <Video size={14} /> },
+                { id: 'web-series', label: 'Web Series', icon: <Film size={14} /> },
+                { id: 'tv-programs', label: 'TV Programs', icon: <Tv size={14} /> },
+                { id: 'feature-films', label: 'Feature Films', icon: <Clapperboard size={14} /> },
+                { id: 'independent-works', label: 'Independent Works', icon: <Sparkles size={14} /> },
+                { id: 'gallery', label: 'Media Gallery', icon: <Image size={14} /> }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabSelect(tab.id)}
+                  className={`w-full px-3 py-2 rounded-lg text-xs uppercase tracking-wider font-bold flex items-center space-x-3 transition-all cursor-pointer ${
+                    activeTab === tab.id 
+                      ? 'bg-gold-500/10 text-gold-500 border-l-2 border-gold-500 pl-2 rounded-l-none' 
+                      : 'hover:bg-obsidian-850 text-obsidian-500 hover:text-obsidian-100'
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* BRAND & JOURNEY */}
+            <div className="space-y-1">
+              <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-500 px-3 font-mono block select-none">
+                Brand & Journey
+              </span>
+              {[
+                { id: 'timeline', label: 'Journey Roadmap', icon: <Calendar size={14} /> },
+                { id: 'blog', label: 'Blog', icon: <FileText size={14} /> }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabSelect(tab.id)}
+                  className={`w-full px-3 py-2 rounded-lg text-xs uppercase tracking-wider font-bold flex items-center space-x-3 transition-all cursor-pointer ${
+                    activeTab === tab.id 
+                      ? 'bg-gold-500/10 text-gold-500 border-l-2 border-gold-500 pl-2 rounded-l-none' 
+                      : 'hover:bg-obsidian-850 text-obsidian-500 hover:text-obsidian-100'
+                  }`}
+                >
+                  {tab.icon}
+                  <span>{tab.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* SYSTEM SETTINGS */}
+            <div className="space-y-1">
+              <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-500 px-3 font-mono block select-none">
+                System Settings
+              </span>
+              {[
+                { id: 'enquiries', label: 'Booking Inbox', icon: <Mail size={14} />, badge: stats.unreadMessages },
+                { id: 'site-content', label: 'Page Configurator', icon: <Settings size={14} /> }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabSelect(tab.id)}
+                  className={`w-full px-3 py-2 rounded-lg text-xs uppercase tracking-wider font-bold flex items-center justify-between transition-all cursor-pointer ${
+                    activeTab === tab.id 
+                      ? 'bg-gold-500/10 text-gold-500 border-l-2 border-gold-500 pl-2 rounded-l-none' 
+                      : 'hover:bg-obsidian-850 text-obsidian-500 hover:text-obsidian-100'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                  </div>
+                  {tab.badge > 0 && (
+                    <span className="bg-gold-500 text-white text-[8px] font-black px-1.5 py-0.5 rounded-full animate-pulse">
+                      {tab.badge}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+
+          </div>
         </div>
 
         {/* Sidebar bottom persistent track player panel */}
-        <div className="bg-obsidian-950 p-4 border border-white/5 rounded-sm text-left">
-          <div className="flex items-center space-x-3">
-            <img 
-              src="https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=150" 
-              alt="Track Cover" 
-              className={`w-10 h-10 object-cover rounded-sm border border-gold-500/20 ${sidebarPlaying ? 'animate-spin' : ''}`}
-              style={{ animationDuration: '8s' }}
-            />
-            <div className="overflow-hidden flex-1">
-              <h5 className="font-serif text-[11px] font-bold text-gold-200 truncate">Ennin Nenjil</h5>
-              <p className="text-[8px] text-gray-500 uppercase tracking-widest truncate">Midhun Saji Ram</p>
-            </div>
-            <button 
-              onClick={() => setSidebarPlaying(!sidebarPlaying)}
-              className="w-7 h-7 rounded-full bg-gold-500 hover:bg-gold-400 text-black flex items-center justify-center transition-transform hover:scale-105"
-            >
-              {sidebarPlaying ? <Pause size={12} fill="black" /> : <Play size={12} fill="black" className="ml-0.5" />}
-            </button>
-          </div>
-          {/* Seek progress */}
-          <div className="mt-3 h-1 bg-neutral-800 rounded-full overflow-hidden">
-            <div className="h-full bg-gold-500 rounded-full" style={{ width: `${sidebarProgress}%` }}></div>
-          </div>
-          <div className="flex justify-between items-center text-[7px] text-gray-500 mt-1 font-mono">
-            <span>01:45</span>
-            <span>04:35</span>
-          </div>
-        </div>
+        
 
       </aside>
 
       {/* 2. MAIN CORE CONTENT WRAPPER */}
-      <main className="flex-1 bg-obsidian-950 flex flex-col min-h-screen">
+      <main className="flex-1 bg-obsidian-950 flex flex-col h-screen overflow-hidden relative">
         
-        {/* Top Floating Control Bar */}
-        <header className="h-16 border-b border-white/5 px-8 flex items-center justify-between bg-obsidian-900/50 backdrop-blur-md">
-          {/* Left search */}
-          <div className="relative flex items-center w-64 text-gray-400 focus-within:text-gold-500">
-            <Search size={14} className="absolute left-3 pointer-events-none" />
-            <input 
-              type="text"
-              placeholder="Search database..."
-              className="bg-obsidian-950 border border-white/5 rounded-full pl-9 pr-4 py-1.5 text-xs text-white focus:outline-none focus:border-gold-500/20 w-full"
-            />
+        {/* Top Control Bar */}
+        <header className="h-14 border-b border-obsidian-700/30 px-6 flex items-center justify-between bg-obsidian-900/40 backdrop-blur-md z-20 shrink-0">
+          <div className="flex items-center space-x-3">
+            {/* Hamburger menu trigger */}
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-1.5 text-slate-400 hover:text-white lg:hidden rounded-lg hover:bg-obsidian-800 transition-colors cursor-pointer"
+            >
+              <Menu size={18} />
+            </button>
+            <span className="text-[10px] font-black tracking-widest text-slate-500 uppercase font-mono hidden sm:inline-block">
+              SYSTEM / {activeTab.replace('-', ' ')}
+            </span>
           </div>
 
-          {/* Right account details */}
-          <div className="flex items-center space-x-6">
-            <button className="text-gray-400 hover:text-gold-500 transition-colors relative">
-              <Bell size={16} />
+          {/* Right account & log out details */}
+          <div className="flex items-center space-x-5">
+            <button 
+              onClick={() => handleTabSelect('enquiries')}
+              className="text-slate-400 hover:text-gold-500 transition-colors relative p-1.5 rounded-lg hover:bg-obsidian-800 cursor-pointer"
+            >
+              <Bell size={15} />
               {stats.unreadMessages > 0 && (
-                <span className="absolute top-[-3px] right-[-3px] w-2 h-2 bg-gold-500 rounded-full animate-pulse" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-gold-500 rounded-full animate-ping" />
               )}
             </button>
 
-            <div className="flex items-center space-x-2 border-l border-white/5 pl-6 text-left">
-              <div className="w-8 h-8 rounded-full border border-gold-500/30 overflow-hidden bg-neutral-800">
+            <div className="flex items-center space-x-2.5 border-l border-obsidian-700/40 pl-5 text-left select-none">
+              <div className="w-7 h-7 rounded-lg border border-gold-500/20 overflow-hidden bg-obsidian-800">
                 <img 
                   src="https://images.unsplash.com/photo-1510915228340-29c85a43dcfe?q=80&w=150" 
                   alt="Admin Portrait"
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div>
-                <h5 className="text-xs font-bold text-white flex items-center">
+              <div className="hidden sm:block">
+                <h5 className="text-[11px] font-bold text-obsidian-100 flex items-center">
                   <span>Midhun Saji Ram</span>
-                  <ChevronDown size={12} className="ml-1 text-gray-500" />
+                  <ChevronDown size={11} className="ml-1 text-slate-500" />
                 </h5>
-                <p className="text-[8px] text-gray-500 uppercase tracking-widest">Admin Owner</p>
+                <p className="text-[8px] text-slate-500 uppercase tracking-wider font-semibold font-mono">Owner</p>
               </div>
             </div>
             
             <button 
               onClick={handleLogout}
-              className="p-2 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-black rounded-sm border border-red-500/20 transition-all"
+              className="p-2 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white rounded-lg border border-red-500/20 transition-all cursor-pointer"
               title="Log Out"
             >
               <LogOut size={13} />
@@ -677,121 +1171,150 @@ export default function App() {
         </header>
 
         {/* Scrollable Workspace Panel */}
-        <div className="flex-1 p-8 overflow-y-auto">
+        <div className="flex-1 p-6 overflow-y-auto min-w-0">
           
           {/* TAB 1: DASHBOARD ANALYTICS OVERVIEW */}
           {activeTab === 'dashboard' && (
-            <div className="space-y-8 animate-fade-in text-left">
+            <div className="space-y-6 animate-fade-in text-left">
               
               {/* Heading */}
               <div>
-                <h2 className="font-serif text-2xl font-bold tracking-tight text-white flex items-center space-x-2">
+                <h2 className="font-serif text-xl font-bold tracking-tight text-obsidian-100 flex items-center space-x-2">
                   <span>Welcome back, Midhun!</span>
-                  <span className="wave-hand animate-bounce">👋</span>
                 </h2>
-                <p className="text-xs text-gray-400 mt-1 font-light">Here's what's happening with your portfolio database today.</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Here is a quick overview of your database metrics and stream stats.</p>
               </div>
 
               {/* Metric Counters Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-6 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                  { label: 'Total Songs', value: stats.songs, change: '+12% from last month', up: true },
-                  { label: 'Media Works', value: stats.mediaWorks, change: 'Shorts, Series, Film', up: true },
-                  { label: 'Total Listeners', value: '124.8K', change: '+18% from last month', up: true },
-                  { label: 'Total Plays', value: '1.24M', change: '+22% from last month', up: true },
-                  { label: 'Achievements', value: stats.timelineEvents, change: 'Timeline events', up: true },
-                  { label: 'Booking Inbox', value: stats.totalMessages, change: `${stats.unreadMessages} unread`, up: stats.unreadMessages > 0 }
+                  { label: 'Songs', value: stats.songs, change: 'Manage compositions database', target: 'songs', bg: 'from-blue-600/10 to-transparent' },
+                  { label: 'My Works', value: stats.mediaWorks, change: 'Manage cinematic works', target: 'media-works', bg: 'from-cyan-600/10 to-transparent' },
+                  { label: 'Journey Milestones', value: stats.timelineEvents, change: 'View achievement roadmap', target: 'timeline', bg: 'from-purple-600/10 to-transparent' },
+                  { label: 'Booking Inbox', value: stats.totalMessages, change: `${stats.unreadMessages} unread enquiry message(s)`, target: 'enquiries', alert: stats.unreadMessages > 0, bg: 'from-amber-600/10 to-transparent' }
                 ].map((m, i) => (
-                  <div key={i} className="bg-obsidian-900 border border-white/5 p-5 rounded-sm shadow-md">
-                    <span className="text-[9px] uppercase tracking-wider text-gray-500 block mb-2">{m.label}</span>
-                    <div className="text-2xl font-serif font-black text-gold-gradient leading-none">{m.value}</div>
-                    <span className={`text-[8px] mt-2 block font-medium ${m.up ? 'text-green-400' : 'text-red-400'}`}>{m.change}</span>
+                  <div 
+                    key={i} 
+                    onClick={() => handleMetricClick(m.target)}
+                    className={`bg-obsidian-900 border border-obsidian-700/50 p-5 rounded-xl shadow-md cursor-pointer hover:border-gold-500/40  active:translate-y-0 transition-all bg-gradient-to-br ${m.bg}`}
+                  >
+                    <span className="text-[9.5px] uppercase tracking-widest text-slate-400 font-black block mb-2">{m.label}</span>
+                    <div className="text-2xl font-bold text-obsidian-100 tracking-tight leading-none font-serif">{m.value}</div>
+                    <span className={`text-[9.5px] mt-3.5 block font-bold uppercase tracking-wider ${m.alert ? 'text-gold-500 animate-pulse' : 'text-slate-500'}`}>
+                      {m.change}
+                    </span>
                   </div>
                 ))}
               </div>
 
               {/* Center Dashboard Split panels */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
                 
                 {/* Plays Overview Graph Chart (using raw SVG paths for gorgeous curves) */}
-                <div className="lg:col-span-8 bg-obsidian-900 border border-white/5 p-6 rounded-sm shadow-md">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="font-serif text-sm font-bold text-white uppercase tracking-wider">Plays Overview</h3>
-                    <select className="bg-obsidian-950 border border-white/5 text-[9px] uppercase tracking-widest px-3 py-1 text-gray-400 focus:outline-none">
+                <div className="lg:col-span-8 bg-obsidian-900 border border-obsidian-700/50 p-6 rounded-xl shadow-md flex flex-col justify-between">
+                  <div className="flex justify-between items-center mb-4">
+                    <div className="flex flex-col text-left">
+                      <h3 className="text-xs uppercase tracking-widest text-obsidian-100 font-black font-mono">Visitor Traffic Analytics</h3>
+                      <span className="text-[9.5px] text-slate-400 font-medium mt-0.5">Total Site Visits: <strong className="text-blue-400 font-mono">{streamData.total}</strong></span>
+                    </div>
+                    <select 
+                      value={streamPeriod} 
+                      onChange={e => setStreamPeriod(e.target.value)}
+                      className="bg-obsidian-950 border border-obsidian-700 text-[8.5px] uppercase tracking-widest px-2.5 py-1 text-slate-400 rounded-lg focus:outline-none cursor-pointer font-bold"
+                    >
+                      <option>This Week</option>
                       <option>This Month</option>
-                      <option>Last Quarter</option>
                     </select>
                   </div>
                   {/* Graphical line SVG */}
-                  <div className="relative h-60 w-full mt-4 flex items-end">
+                  <div className="relative h-48 w-full mt-4 flex items-end">
                     <svg viewBox="0 0 500 200" className="w-full h-full text-gold-500 overflow-visible">
                       <defs>
                         <linearGradient id="curveGlow" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#d4af37" stopOpacity="0.25" />
-                          <stop offset="100%" stopColor="#d4af37" stopOpacity="0" />
+                          <stop offset="0%" stopColor="#2563eb" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
                         </linearGradient>
                       </defs>
                       {/* Grid Lines */}
-                      <line x1="0" y1="50" x2="500" y2="50" stroke="rgba(255,255,255,0.03)" />
-                      <line x1="0" y1="100" x2="500" y2="100" stroke="rgba(255,255,255,0.03)" />
-                      <line x1="0" y1="150" x2="500" y2="150" stroke="rgba(255,255,255,0.03)" />
+                      <line x1="0" y1="50" x2="500" y2="50" stroke="rgba(37,99,235,0.04)" strokeDasharray="3 3" />
+                      <line x1="0" y1="100" x2="500" y2="100" stroke="rgba(37,99,235,0.04)" strokeDasharray="3 3" />
+                      <line x1="0" y1="150" x2="500" y2="150" stroke="rgba(37,99,235,0.04)" strokeDasharray="3 3" />
                       
                       {/* Glow Fill */}
-                      <path d="M 0 200 Q 80 120 150 150 T 300 80 T 450 100 L 500 110 L 500 200 Z" fill="url(#curveGlow)" />
-                      {/* Main golden curve */}
-                      <path d="M 0 200 Q 80 120 150 150 T 300 80 T 450 100 L 500 110" fill="none" stroke="#d4af37" strokeWidth="2.5" />
+                      <path d={streamData.glowPath} fill="url(#curveGlow)" />
+                      {/* Main blue curve */}
+                      <path d={streamData.linePath} fill="none" stroke="#2563eb" strokeWidth="2.5" />
                       
-                      {/* Chart dots */}
-                      <circle cx="300" cy="80" r="4" fill="#000" stroke="#d4af37" strokeWidth="2.5" />
+                      {/* Interactive dots */}
+                      {streamData.coords.map((c, idx) => (
+                        <circle 
+                          key={idx} 
+                          cx={c.x} 
+                          cy={c.y} 
+                          r={idx === streamData.coords.length - 1 ? "5" : "3.5"} 
+                          fill={idx === streamData.coords.length - 1 ? "#2563eb" : "#090d16"} 
+                          stroke="#2563eb" 
+                          strokeWidth="2" 
+                          className={idx === streamData.coords.length - 1 ? "animate-pulse" : ""} 
+                        />
+                      ))}
                     </svg>
                     
-                    {/* Tooltip marker */}
-                    <div className="absolute top-[35%] left-[60%] bg-gold-500 text-black px-2 py-1 text-[8px] font-bold rounded-sm shadow-md font-mono pointer-events-none">
-                      May 28: 32,456 Plays
-                    </div>
+                    {/* Tooltip marker at peak */}
+                    {streamData.coords.length > 0 && (
+                      <div 
+                        className="absolute bg-obsidian-950 border border-obsidian-750 text-obsidian-100 px-2.5 py-1.5 rounded-lg shadow-xl pointer-events-none flex flex-col text-left transition-all duration-300"
+                        style={{
+                          top: '15%',
+                          left: '42%'
+                        }}
+                      >
+                        <span className="text-[7.5px] uppercase tracking-wider text-slate-500 font-bold">{streamData.peakDay} Peak</span>
+                        <span className="text-[10px] font-bold text-obsidian-100 font-mono">{streamData.peak} Page Views</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex justify-between items-center text-[9px] text-gray-500 mt-2 font-mono uppercase tracking-wider">
-                    <span>May 12</span>
-                    <span>May 19</span>
-                    <span>May 26</span>
-                    <span>Jun 02</span>
-                    <span>Jun 09</span>
+                  <div className="flex justify-between items-center text-[9px] text-slate-500 mt-2 font-mono uppercase tracking-wider select-none">
+                    {streamData.days.map((d, idx) => (
+                      <span key={idx}>{d}</span>
+                    ))}
                   </div>
                 </div>
 
                 {/* Circular donut chart and Storage counts */}
-                <div className="lg:col-span-4 bg-obsidian-900 border border-white/5 p-6 rounded-sm shadow-md flex flex-col justify-between">
-                  <h3 className="font-serif text-sm font-bold text-white uppercase tracking-wider mb-6">Storage Overview</h3>
+                <div className="lg:col-span-4 bg-obsidian-900 border border-obsidian-700/50 p-6 rounded-xl shadow-md flex flex-col justify-between">
+                  <h3 className="text-xs uppercase tracking-widest text-obsidian-100 font-black font-mono">Storage Allocation</h3>
                   
-                  <div className="flex justify-center items-center relative py-6">
-                    {/* SVG circle stroke offset donut */}
-                    <svg className="w-36 h-36 transform -rotate-90">
-                      <circle cx="72" cy="72" r="54" stroke="#121217" strokeWidth="12" fill="transparent" />
+                  <div className="flex justify-center items-center relative py-4">
+                    {/* SVG circle donut */}
+                    <svg className="w-28 h-28 transform -rotate-90">
+                      <circle cx="56" cy="56" r="42" stroke="#090d16" strokeWidth="10" fill="transparent" />
                       <circle 
-                        cx="72" 
-                        cy="72" 
-                        r="54" 
-                        stroke="#d4af37" 
-                        strokeWidth="12" 
+                        cx="56" 
+                        cy="56" 
+                        r="42" 
+                        stroke="#2563eb" 
+                        strokeWidth="10" 
                         fill="transparent" 
-                        strokeDasharray="339.29" 
-                        strokeDashoffset="108.57" /* 68% filled */
+                        strokeDasharray="263.89" 
+                        strokeDashoffset={strokeOffset} 
                       />
                     </svg>
-                    <div className="absolute flex flex-col items-center justify-center">
-                      <span className="text-2xl font-serif font-black text-white">68%</span>
-                      <span className="text-[7.5px] uppercase tracking-widest text-gray-500">Used</span>
+                    <div className="absolute flex flex-col items-center justify-center select-none">
+                      <span className="text-xl font-bold text-black font-mono">{usedPercent}%</span>
+                      <span className="text-[7px] uppercase tracking-widest text-slate-500 font-bold font-mono">Space Used</span>
                     </div>
                   </div>
 
                   {/* List breakdown */}
-                  <div className="space-y-2 mt-4 text-[10px]">
+                  <div className="space-y-1.5 mt-3 text-[10px]">
                     {[
-                      { label: 'Images Assets', size: '12.4 GB', color: 'bg-gold-500' },
-                      { label: 'Video Clips', size: '18.7 GB', color: 'bg-white' },
-                      { label: 'Audio Tracks', size: '8.9 GB', color: 'bg-gold-700' }
+                      { label: 'Images Assets', size: formatBytes(storageStats.imageBytes), color: 'bg-gold-500' },
+                      { label: 'Audio Tracks', size: formatBytes(storageStats.audioBytes), color: 'bg-blue-800' },
+                      { label: 'Video Clips', size: formatBytes(storageStats.videoBytes), color: 'bg-red-600' },
+                      { label: 'Other Uploads', size: formatBytes(storageStats.otherBytes), color: 'bg-purple-600' }
                     ].map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-gray-400">
+                      <div key={idx} className="flex justify-between items-center text-slate-400">
                         <div className="flex items-center space-x-2">
                           <span className={`w-1.5 h-1.5 rounded-full ${item.color}`} />
                           <span>{item.label}</span>
@@ -806,67 +1329,76 @@ export default function App() {
               </div>
 
               {/* Bottom split list panels */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 {/* Recent Added Table */}
-                <div className="lg:col-span-7 bg-obsidian-900 border border-white/5 p-6 rounded-sm shadow-md text-left">
-                  <h3 className="font-serif text-sm font-bold text-white uppercase tracking-wider mb-6">Recent Added Content</h3>
-                  
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-[11px] text-left">
-                      <thead>
-                        <tr className="text-gray-500 border-b border-white/5 uppercase tracking-wider text-[8.5px]">
-                          <th className="pb-3">Type</th>
-                          <th className="pb-3">Title</th>
-                          <th className="pb-3">Date</th>
-                          <th className="pb-3">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5 text-gray-300 font-light">
-                        {[
-                          { type: 'Song', title: 'Ente Nenjil (Acoustic)', date: 'June 10, 2024' },
-                          { type: 'Album', title: 'Letters Unheard', date: 'June 08, 2024' },
-                          { type: 'Gallery', title: 'Live in Cochin', date: 'June 07, 2024' },
-                          { type: 'Blog', title: 'The Story Behind Ennin Nenjil', date: 'June 05, 2024' }
-                        ].map((row, idx) => (
-                          <tr key={idx}>
-                            <td className="py-3 font-semibold text-gold-500 uppercase tracking-widest text-[9px]">{row.type}</td>
-                            <td className="py-3 font-semibold text-white">{row.title}</td>
-                            <td className="py-3 text-gray-400">{row.date}</td>
-                            <td className="py-3"><span className="bg-gold-500/10 text-gold-500 px-2 py-0.5 text-[8.5px] uppercase font-bold tracking-widest rounded-sm">Published</span></td>
+                <div className="lg:col-span-7 bg-obsidian-900 border border-obsidian-700/50 p-5 rounded-xl shadow-md text-left flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-xs uppercase tracking-widest text-obsidian-100 font-black font-mono mb-4">Recent Added Content</h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[11px] text-left">
+                        <thead>
+                          <tr className="text-slate-500 border-b border-obsidian-750 uppercase tracking-wider text-[8px] font-bold">
+                            <th className="pb-2">Type</th>
+                            <th className="pb-2">Title</th>
+                            <th className="pb-2">Date Added</th>
+                            <th className="pb-2">Status</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-obsidian-750 text-obsidian-300">
+                          {[
+                            { type: 'Song', title: 'Ennin Nenjil (Acoustic)', date: 'June 10, 2026' },
+                            { type: 'Album', title: 'Letters Unheard', date: 'June 08, 2026' },
+                            { type: 'Gallery', title: 'Live in Cochin', date: 'June 07, 2026' },
+                            { type: 'Blog', title: 'Story Behind Ennin Nenjil', date: 'June 05, 2026' }
+                          ].map((row, idx) => (
+                            <tr key={idx} className="hover:bg-obsidian-850/50 transition-colors">
+                              <td className="py-2.5 font-bold text-gold-500 uppercase tracking-widest text-[8.5px] font-mono">{row.type}</td>
+                              <td className="py-2.5 font-semibold text-obsidian-100 truncate max-w-[150px]">{row.title}</td>
+                              <td className="py-2.5 text-slate-400 font-mono">{row.date}</td>
+                              <td className="py-2.5">
+                                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 text-[8px] uppercase font-bold tracking-wider rounded-md font-mono">
+                                  Live
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
 
                 {/* Recent Enquiries List */}
-                <div className="lg:col-span-5 bg-obsidian-900 border border-white/5 p-6 rounded-sm shadow-md text-left flex flex-col justify-between">
-                  <h3 className="font-serif text-sm font-bold text-white uppercase tracking-wider mb-6">Recent Enquiries</h3>
+                <div className="lg:col-span-5 bg-obsidian-900 border border-obsidian-700/50 p-5 rounded-xl shadow-md text-left flex flex-col justify-between">
+                  <h3 className="text-xs uppercase tracking-widest text-obsidian-100 font-black font-mono mb-4">Recent Enquiries</h3>
                   
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {messages.slice(0, 3).map((msg) => (
-                      <div key={msg._id} className="flex justify-between items-start space-x-3 bg-obsidian-950 p-3.5 border border-white/5 rounded-sm">
-                        <div className="flex items-start space-x-3 text-left">
-                          <div className="w-8 h-8 rounded-full bg-neutral-800 overflow-hidden mt-0.5 flex-shrink-0 border border-gold-500/20">
-                            <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${msg.name}`} alt="" />
+                      <div key={msg._id} className="flex justify-between items-start space-x-3 bg-obsidian-950 p-3 border border-obsidian-700/40 rounded-lg">
+                        <div className="flex items-start space-x-3 text-left min-w-0">
+                          <div className="w-8 h-8 rounded-full bg-obsidian-800 overflow-hidden shrink-0 border border-gold-500/20 flex items-center justify-center text-xs font-bold text-gold-500">
+                            {msg.name.slice(0, 2).toUpperCase()}
                           </div>
-                          <div>
-                            <h5 className="font-bold text-xs text-white leading-tight">{msg.name}</h5>
-                            <p className="text-[9px] text-gold-500 uppercase tracking-wider font-semibold mt-1 truncate max-w-[150px]">{msg.subject}</p>
+                          <div className="min-w-0">
+                            <h5 className="font-bold text-[11px] text-obsidian-100 leading-tight truncate">{msg.name}</h5>
+                            <p className="text-[9px] text-gold-500 uppercase tracking-wider font-semibold mt-1 truncate">{msg.subject}</p>
                           </div>
                         </div>
-                        <span className="text-[8px] text-gray-500 font-mono">2m ago</span>
+                        <span className="text-[7.5px] text-slate-500 font-mono shrink-0">Inbox</span>
                       </div>
                     ))}
+                    {messages.length === 0 && (
+                      <p className="text-xs text-slate-500 italic py-4">No recent bookings in mail.</p>
+                    )}
                   </div>
 
                   <button 
-                    onClick={() => setActiveTab('enquiries')}
-                    className="w-full text-center text-[9px] uppercase tracking-widest text-gold-500 hover:text-gold-400 mt-6 font-bold"
+                    onClick={() => handleTabSelect('enquiries')}
+                    className="w-full text-center text-[8.5px] uppercase tracking-widest text-gold-500 hover:text-gold-600 mt-4.5 font-black flex items-center justify-center space-x-1.5 cursor-pointer"
                   >
-                    View All Enquiries Inbox &rarr;
+                    <span>Open Bookings Mailbox</span>
+                    <ChevronRight size={10} />
                   </button>
                 </div>
 
@@ -877,608 +1409,1016 @@ export default function App() {
 
           {/* TAB 2: SONGS / WORKS PORTFOLIO MANAGEMENT */}
           {activeTab === 'songs' && (
-            <div className="space-y-8 animate-fade-in text-left">
-              <form onSubmit={handleAddSong} className="bg-obsidian-900 border border-white/5 p-6 rounded-sm space-y-4">
-                <h3 className="font-serif text-base font-bold text-gold-500 uppercase tracking-widest flex items-center space-x-2">
-                  <Plus size={15} /> <span>Register New Music Composition Release</span>
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Song Title"
-                    value={songForm.title}
-                    onChange={(e) => setSongForm({ ...songForm, title: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none focus:border-gold-500/30"
-                  />
-                  <select
-                    value={songForm.category}
-                    onChange={(e) => setSongForm({ ...songForm, category: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
+            <div className="space-y-6 animate-fade-in text-left">
+              
+              {/* Spacious Subheader Toggles */}
+              <div className="flex flex-col sm:flex-row justify-between items-center sm:items-center border-b border-obsidian-700/30 pb-4 gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-obsidian-100 font-serif uppercase tracking-wider">Songs</h2>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Manage and preview all compositions visible on your homepage Works panel.</p>
+                </div>
+                <div className="flex bg-obsidian-950 border border-obsidian-700/50 p-1 rounded-lg select-none">
+                  <button
+                    onClick={() => setSongsViewMode('list')}
+                    className={`px-4 py-1.5 text-[9.5px] font-black uppercase tracking-widest rounded-md transition-all cursor-pointer ${
+                      songsViewMode === 'list' 
+                        ? 'bg-gold-500 text-white shadow-md' 
+                        : 'text-obsidian-500 hover:text-obsidian-100'
+                    }`}
                   >
-                    <option value="Single">Single Release</option>
-                    <option value="Album">Album Track</option>
-                    <option value="Film Score">Film Composition</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <input
-                    type="text"
-                    placeholder="Cover Image URL (e.g. Unsplash link)"
-                    value={songForm.coverUrl}
-                    onChange={(e) => setSongForm({ ...songForm, coverUrl: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Audio Preview Stream URL (.mp3)"
-                    value={songForm.audioUrl}
-                    onChange={(e) => setSongForm({ ...songForm, audioUrl: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Spotify Stream Link"
-                    value={songForm.spotifyUrl}
-                    onChange={(e) => setSongForm({ ...songForm, spotifyUrl: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                  />
-                </div>
-
-                <textarea
-                  placeholder="Composition Description Notes..."
-                  rows={2}
-                  value={songForm.description}
-                  onChange={(e) => setSongForm({ ...songForm, description: e.target.value })}
-                  className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                ></textarea>
-
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="isFeaturedDashboard"
-                    checked={songForm.isFeatured}
-                    onChange={(e) => setSongForm({ ...songForm, isFeatured: e.target.checked })}
-                    className="accent-gold-500"
-                  />
-                  <label htmlFor="isFeaturedDashboard" className="text-[10px] uppercase tracking-widest text-gray-400">Feature this release prominently on home slideshow</label>
-                </div>
-
-                <button type="submit" className="px-6 py-3 bg-gold-500 text-black font-semibold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-400">
-                  Publish Track Release
-                </button>
-              </form>
-
-              {/* Table details list */}
-              <div className="bg-obsidian-900 border border-white/5 p-6 rounded-sm">
-                <h4 className="font-serif text-sm font-bold text-white mb-4">Compositions Registry</h4>
-                <div className="space-y-3">
-                  {songs.map((song) => (
-                    <div key={song._id} className="bg-obsidian-950 p-4 border border-white/5 rounded-sm flex items-center justify-between">
-                      <div className="flex items-center space-x-3 text-left">
-                        <img src={song.coverUrl} className="w-10 h-10 object-cover rounded-sm border border-white/10" alt="" />
-                        <div>
-                          <h5 className="font-serif text-xs font-bold text-gold-200">{song.title}</h5>
-                          <p className="text-[9px] text-gray-500 uppercase tracking-widest">{song.category} {song.isFeatured ? '&bull; Featured' : ''}</p>
-                        </div>
-                      </div>
-                      <button onClick={() => handleDeleteSong(song._id)} className="text-gray-500 hover:text-red-400 p-2 transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
+                    View Registry ({songs.length})
+                  </button>
+                  <button
+                    onClick={() => setSongsViewMode('add')}
+                    className={`px-4 py-1.5 text-[9.5px] font-black uppercase tracking-widest rounded-md transition-all cursor-pointer ${
+                      songsViewMode === 'add' 
+                        ? 'bg-gold-500 text-white shadow-md' 
+                        : 'text-obsidian-500 hover:text-obsidian-100'
+                    }`}
+                  >
+                    Add New Song
+                  </button>
                 </div>
               </div>
+
+              {songsViewMode === 'list' ? (
+                <div className="bg-obsidian-900 border border-obsidian-700/50 p-6 rounded-xl space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto pr-1">
+                    {songs.map((song) => (
+                      <div key={song._id} className="bg-obsidian-950 p-4 border border-obsidian-700/40 rounded-xl flex items-center justify-between hover:border-gold-500/25 transition-colors gap-4">
+                        <div className="flex items-center space-x-4 text-left min-w-0">
+                          <img src={song.coverUrl || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=100'} className="w-12 h-12 object-cover rounded-lg border border-obsidian-750 shrink-0 shadow-md" alt="" />
+                          <div className="min-w-0">
+                            <h5 className="font-serif text-sm font-bold text-obsidian-100 truncate">{song.title}</h5>
+                            <div className="flex items-center space-x-2 text-[9px] uppercase tracking-wider text-slate-500 font-bold mt-1.5 font-mono">
+                              <span className="text-gold-500 bg-gold-500/5 border border-gold-500/10 px-2 py-0.5 rounded-md">{song.category}</span>
+                              {song.isFeatured && (
+                                <span className="bg-blue-600/10 text-blue-400 border border-blue-600/20 px-2 py-0.5 rounded-md font-black">Featured on Slider</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteSong(song._id)} 
+                          className="text-slate-400 hover:text-red-550 p-2.5 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer shrink-0"
+                          title="Delete Release"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    {songs.length === 0 && (
+                      <p className="text-xs text-slate-500 italic py-10 col-span-full text-center">No compositions recorded in registry database.</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleAddSong} className="bg-obsidian-900 border border-obsidian-700/50 p-4 sm:p-5 rounded-xl space-y-3.5 w-full">
+                  <div className="border-b border-obsidian-700/50 pb-3">
+                    <h3 className="text-xs uppercase tracking-widest text-gold-500 font-black flex items-center space-x-2">
+                      <Plus size={14} /> <span>Create New Composition Release</span>
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Song Release Title">
+                      <Input
+                        type="text"
+                        required
+                        placeholder="e.g. Ennin Nenjil (Acoustic)"
+                        value={songForm.title}
+                        onChange={(e) => setSongForm({ ...songForm, title: e.target.value })}
+                      />
+                    </FormField>
+
+                    <FormField label="Music Category">
+                      <Select
+                        value={songForm.category}
+                        onChange={(e) => setSongForm({ ...songForm, category: e.target.value })}
+                      >
+                        <option value="Single">Single Release</option>
+                        <option value="Album">Album Track</option>
+                        <option value="Film Score">Film Score Composition</option>
+                      </Select>
+                    </FormField>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Cover Artwork Image File">
+                      <FileUpload
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'songCover')}
+                        label="Upload cover picture"
+                        value={songForm.coverUrl}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Or enter Image URL"
+                        value={songForm.coverUrl}
+                        onChange={(e) => setSongForm({ ...songForm, coverUrl: e.target.value })}
+                        className="mt-1.5 bg-obsidian-950/70 border border-obsidian-850 px-3 py-2 text-[10.5px] text-obsidian-100 rounded-lg focus:outline-none"
+                      />
+                    </FormField>
+
+                    <FormField label="Audio Track Preview File (.mp3)">
+                      <FileUpload
+                        accept="audio/*"
+                        onChange={(e) => handleFileUpload(e, 'songAudio')}
+                        label="Upload audio track"
+                        value={songForm.audioUrl}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Or enter Audio URL"
+                        value={songForm.audioUrl}
+                        onChange={(e) => setSongForm({ ...songForm, audioUrl: e.target.value })}
+                        className="mt-1.5 bg-obsidian-950/70 border border-obsidian-850 px-3 py-2 text-[10.5px] text-obsidian-100 rounded-lg focus:outline-none"
+                      />
+                    </FormField>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Spotify Track Link">
+                      <Input
+                        type="text"
+                        placeholder="https://open.spotify.com/track/..."
+                        value={songForm.spotifyUrl}
+                        onChange={(e) => setSongForm({ ...songForm, spotifyUrl: e.target.value })}
+                      />
+                    </FormField>
+
+                    <FormField label="Composition Description Notes">
+                      <Textarea
+                        placeholder="Notes about style, production credits, orchestration..."
+                        rows={2}
+                        value={songForm.description}
+                        onChange={(e) => setSongForm({ ...songForm, description: e.target.value })}
+                      />
+                    </FormField>
+                  </div>
+
+                  <div className="flex items-center space-x-2.5 py-1 text-left">
+                    <input
+                      type="checkbox"
+                      id="isFeaturedDashboard"
+                      checked={songForm.isFeatured}
+                      onChange={(e) => setSongForm({ ...songForm, isFeatured: e.target.checked })}
+                      className="w-4 h-4 accent-gold-500 rounded-lg bg-obsidian-950 border border-obsidian-700 cursor-pointer"
+                    />
+                    <label htmlFor="isFeaturedDashboard" className="text-[10.5px] uppercase tracking-widest text-slate-400 cursor-pointer font-bold">
+                      Feature release prominently on homepage slider
+                    </label>
+                  </div>
+
+                  <div className="flex justify-end space-x-3 pt-3">
+                    <button 
+                      type="button" 
+                      onClick={() => setSongsViewMode('list')}
+                      className="px-4 py-2 bg-obsidian-950 border border-obsidian-700 text-obsidian-500 hover:text-obsidian-100 text-[10.5px] font-bold uppercase tracking-widest rounded-lg cursor-pointer transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98]"
+                    >
+                      Save Release
+                    </button>
+                  </div>
+                </form>
+              )}
+
             </div>
           )}
 
           {/* TAB: MEDIA & CINEMATIC WORKS CMS */}
-          {activeTab === 'media-works' && (
-            <div className="space-y-8 animate-fade-in text-left">
-              <form onSubmit={handleAddMediaWork} className="bg-obsidian-900 border border-white/5 p-6 rounded-sm space-y-4">
-                <h3 className="font-serif text-base font-bold text-gold-500 uppercase tracking-widest flex items-center space-x-2">
-                  <Plus size={15} /> <span>Add Media & Cinematic Work</span>
-                </h3>
+          {['media-works', 'short-films', 'web-series', 'tv-programs', 'feature-films', 'independent-works'].includes(activeTab) && (() => {
+            const filteredWorks = mediaWorks.filter(w => {
+              if (activeTab === 'media-works') return true;
+              return w.type === getTabWorkType(activeTab);
+            });
+            return (
+              <div className="space-y-6 animate-fade-in text-left">
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Title */}
-                  <div className="sm:col-span-2">
-                    <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Project Title</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Echoes of Silence"
-                      value={mediaWorkForm.title}
-                      onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, title: e.target.value })}
-                      className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Type */}
+                {/* Subheader Toggles */}
+                <div className="flex flex-col sm:flex-row justify-between items-center sm:items-center border-b border-obsidian-700/30 pb-4 gap-4">
                   <div>
-                    <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Work Category</label>
-                    <select
-                      value={mediaWorkForm.type}
-                      onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, type: e.target.value })}
-                      className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
+                    <h2 className="text-lg font-bold text-obsidian-100 font-serif uppercase tracking-wider">{getTabLabel(activeTab)}</h2>
+                    <p className="text-[11px] text-slate-400 mt-0.5">Manage posters, video/audio assets, and release details for {getTabLabel(activeTab)} visible on the portfolio site.</p>
+                  </div>
+                  <div className="flex bg-obsidian-950 border border-obsidian-700/50 p-1 rounded-lg select-none">
+                    <button
+                      onClick={() => setMediaViewMode('list')}
+                      className={`px-4 py-1.5 text-[9.5px] font-black uppercase tracking-widest rounded-md transition-all cursor-pointer ${
+                        mediaViewMode === 'list' 
+                          ? 'bg-gold-500 text-white shadow-md' 
+                          : 'text-obsidian-500 hover:text-obsidian-100'
+                      }`}
                     >
-                      <option value="short_film">Short Film</option>
-                      <option value="web_series">Web Series</option>
-                      <option value="tv_program">TV Program</option>
-                      <option value="movie">Movie / Feature Film</option>
-                      <option value="independent_work">Independent Work</option>
-                    </select>
+                      View Releases ({filteredWorks.length})
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMediaViewMode('add');
+                        setMediaWorkForm({
+                          title: '',
+                          type: getTabWorkType(activeTab),
+                          coverUrl: '',
+                          videoUrl: '',
+                          audioUrl: '',
+                          mediaType: 'youtube',
+                          releaseYear: '',
+                          description: '',
+                          isFeatured: false
+                        });
+                      }}
+                      className={`px-4 py-1.5 text-[9.5px] font-black uppercase tracking-widest rounded-md transition-all cursor-pointer ${
+                        mediaViewMode === 'add' 
+                          ? 'bg-gold-500 text-white shadow-md' 
+                          : 'text-obsidian-500 hover:text-obsidian-100'
+                      }`}
+                    >
+                      Add {getTabSingularLabel(activeTab)}
+                    </button>
+                  </div>
+                </div>
+
+                {mediaViewMode === 'list' ? (
+                  <div className="bg-obsidian-900 border border-obsidian-700/50 p-6 rounded-xl space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[600px] overflow-y-auto pr-1">
+                      {filteredWorks.map((work) => (
+                        <div key={work._id} className="bg-obsidian-950 border border-obsidian-700/40 p-4 rounded-xl flex items-center justify-between gap-4 hover:border-gold-500/25 transition-colors">
+                          <div className="flex items-center gap-4 min-w-0">
+                            {work.coverUrl ? (
+                              <img
+                                src={work.coverUrl.startsWith('/uploads') ? `${API_URL.replace('/api', '')}${work.coverUrl}` : work.coverUrl}
+                                className="w-10 h-14 object-cover rounded-lg border border-obsidian-750 shrink-0 shadow"
+                                alt=""
+                              />
+                            ) : (
+                              <div className="w-10 h-14 bg-obsidian-900 border border-obsidian-850 rounded-lg flex items-center justify-center shrink-0 text-slate-500 text-[8px] font-black uppercase tracking-wider text-center p-1 font-mono">
+                                No Cover
+                              </div>
+                            )}
+                            <div className="min-w-0 text-left">
+                              <h5 className="font-serif text-sm font-bold text-obsidian-100 truncate leading-snug">{work.title}</h5>
+                              <div className="flex items-center space-x-2 text-[9px] uppercase tracking-wider text-slate-500 font-bold mt-1.5 font-mono">
+                                <span className="text-gold-500 bg-gold-500/5 border border-gold-500/10 px-2 py-0.5 rounded-md">
+                                  {work.type === 'independent_work' 
+                                    ? `indie (${(!!work.audioUrl || /\.(mp3|wav)(?:\?|$)/i.test(work.videoUrl || '')) ? 'audio' : 'video'})` 
+                                    : work.type.replace('_', ' ')}
+                                </span>
+                                <span>&bull;</span>
+                                <span>{work.releaseYear}</span>
+                                {work.isFeatured && (
+                                  <span className="text-blue-400 bg-blue-600/5 border border-blue-600/10 px-1.5 py-0.5 rounded-md font-black">Featured</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => handleDeleteMediaWork(work._id)} 
+                            className="text-slate-400 hover:text-red-500 p-2.5 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer shrink-0"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                      {filteredWorks.length === 0 && (
+                        <p className="text-xs text-slate-500 italic py-10 col-span-full text-center">No {getTabSingularLabel(activeTab).toLowerCase()} releases uploaded yet.</p>
+                      )}
+                    </div>
+                  </div>
+              ) : (
+                <form onSubmit={handleAddMediaWork} className="bg-obsidian-900 border border-obsidian-700/50 p-4 sm:p-5 rounded-xl space-y-3.5 w-full">
+                  <div className="border-b border-obsidian-700/50 pb-3">
+                    <h3 className="text-xs uppercase tracking-widest text-gold-500 font-black flex items-center space-x-2">
+                      <Plus size={14} /> <span>Create {getTabSingularLabel(activeTab)}</span>
+                    </h3>
                   </div>
 
-                  {/* Release Year */}
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Release Year</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. 2024"
-                      value={mediaWorkForm.releaseYear}
-                      onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, releaseYear: e.target.value })}
-                      className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className={activeTab === 'media-works' ? "sm:col-span-2" : "sm:col-span-3"}>
+                      <FormField label="Project Release Title">
+                        <Input
+                          type="text"
+                          required
+                          placeholder="e.g. Echoes of Silence"
+                          value={mediaWorkForm.title}
+                          onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, title: e.target.value })}
+                        />
+                      </FormField>
+                    </div>
+
+                    {activeTab === 'media-works' && (
+                      <FormField label="Work Category">
+                        <Select
+                          value={mediaWorkForm.type}
+                          onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, type: e.target.value })}
+                        >
+                          <option value="short_film">Short Film</option>
+                          <option value="web_series">Web Series</option>
+                          <option value="tv_program">TV Program</option>
+                          <option value="movie">Feature Film</option>
+                          <option value="independent_work">Independent Work</option>
+                        </Select>
+                      </FormField>
+                    )}
                   </div>
 
-                  {/* Media Type / Subtype */}
-                  {mediaWorkForm.type === 'independent_work' ? (
-                    <>
-                      <div>
-                        <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Independent Work Type</label>
-                        <select
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Release Year">
+                      <Input
+                        type="text"
+                        required
+                        placeholder="e.g. 2026"
+                        value={mediaWorkForm.releaseYear}
+                        onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, releaseYear: e.target.value })}
+                      />
+                    </FormField>
+
+                    {mediaWorkForm.type === 'independent_work' ? (
+                      <FormField label="Independent Subtype">
+                        <Select
                           value={independentSubtype}
                           onChange={(e) => setIndependentSubtype(e.target.value)}
-                          className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
                         >
                           <option value="video">Video Release</option>
-                          <option value="audio">Audio Track</option>
-                        </select>
-                      </div>
-                      {independentSubtype === 'video' && (
-                        <div>
-                          <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Video Source</label>
-                          <select
-                            value={mediaWorkForm.mediaType}
-                            onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, mediaType: e.target.value })}
-                            className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                          >
-                            <option value="youtube">YouTube Video Link</option>
-                            <option value="upload">User Uploaded Video</option>
-                          </select>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Media Resource Type</label>
-                      <select
-                        value={mediaWorkForm.mediaType}
-                        onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, mediaType: e.target.value })}
-                        className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                      >
-                        <option value="youtube">YouTube Video Link</option>
-                        <option value="upload">User Uploaded Video/Audio</option>
-                        <option value="image_only">Poster Image Only</option>
-                      </select>
+                          <option value="audio">Audio Soundtrack</option>
+                        </Select>
+                      </FormField>
+                    ) : (
+                      <FormField label="Resource Hosting Type">
+                        <Select
+                          value={mediaWorkForm.mediaType}
+                          onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, mediaType: e.target.value })}
+                        >
+                          <option value="youtube">YouTube Video Link</option>
+                          <option value="upload">User Uploaded Video/Audio File</option>
+                          <option value="image_only">Poster Image Showcase Only</option>
+                        </Select>
+                      </FormField>
+                    )}
+                  </div>
+
+                  {mediaWorkForm.type === 'independent_work' && independentSubtype === 'video' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="hidden sm:block"></div>
+                      <FormField label="Video Host Resource">
+                        <Select
+                          value={mediaWorkForm.mediaType}
+                          onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, mediaType: e.target.value })}
+                        >
+                          <option value="youtube">YouTube Embed Link</option>
+                          <option value="upload">Custom Media Upload</option>
+                        </Select>
+                      </FormField>
                     </div>
                   )}
 
-                  {/* Featured */}
-                  <div className="flex items-center space-x-3 pt-6 h-full">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Cover Artwork Poster Artwork">
+                      <FileUpload
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, 'mediaCover')}
+                        label="Upload Poster Cover"
+                        value={mediaWorkForm.coverUrl}
+                      />
+                      <Input
+                        type="text"
+                        placeholder="Or enter Image URL"
+                        value={mediaWorkForm.coverUrl}
+                        onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, coverUrl: e.target.value })}
+                        className="mt-1.5 bg-obsidian-950/70 border border-obsidian-850 px-3 py-2 text-[10.5px] text-obsidian-100 rounded-lg focus:outline-none"
+                      />
+                    </FormField>
+
+                    {mediaWorkForm.mediaType !== 'image_only' && (
+                      <>
+                        {!(mediaWorkForm.type === 'independent_work' && independentSubtype === 'audio') ? (
+                          <FormField label={mediaWorkForm.mediaType === 'youtube' ? 'YouTube Video URL' : 'Upload Video File'}>
+                            <FileUpload
+                              accept="video/*"
+                              onChange={(e) => handleFileUpload(e, 'mediaVideo')}
+                              label="Upload Video Clip"
+                              value={mediaWorkForm.videoUrl}
+                            />
+                            <Input
+                              type="text"
+                              placeholder={mediaWorkForm.mediaType === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 'Or enter video file URL'}
+                              value={mediaWorkForm.videoUrl}
+                              onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, videoUrl: e.target.value })}
+                              className="mt-1.5 bg-obsidian-950/70 border border-obsidian-850 px-3 py-2 text-[10.5px] text-obsidian-100 rounded-lg focus:outline-none"
+                            />
+                          </FormField>
+                        ) : (
+                          <FormField label="Soundtrack Upload (.mp3)">
+                            <FileUpload
+                              accept="audio/*"
+                              onChange={(e) => handleFileUpload(e, 'mediaAudio')}
+                              label="Upload Audio Soundtrack"
+                              value={mediaWorkForm.audioUrl}
+                            />
+                            <Input
+                              type="text"
+                              placeholder="Or enter Audio URL"
+                              value={mediaWorkForm.audioUrl}
+                              onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, audioUrl: e.target.value })}
+                              className="mt-1.5 bg-obsidian-950/70 border border-obsidian-850 px-3 py-2 text-[10.5px] text-obsidian-100 rounded-lg focus:outline-none"
+                            />
+                          </FormField>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  <FormField label="Project Description details">
+                    <Textarea
+                      rows={2}
+                      placeholder="Synopsis description, key crew members, roles composed..."
+                      value={mediaWorkForm.description}
+                      onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, description: e.target.value })}
+                    />
+                  </FormField>
+
+                  <div className="flex items-center space-x-2.5 py-1 text-left">
                     <input
                       type="checkbox"
                       id="mediaFeatured"
                       checked={mediaWorkForm.isFeatured}
                       onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, isFeatured: e.target.checked })}
-                      className="rounded border-white/10 bg-obsidian-950 text-gold-500 focus:ring-gold-500/20"
+                      className="w-4 h-4 accent-gold-500 rounded-lg bg-obsidian-950 border border-obsidian-700 cursor-pointer"
                     />
-                    <label htmlFor="mediaFeatured" className="text-xs text-gray-400 cursor-pointer font-medium select-none">
-                      Feature on Homepage
+                    <label htmlFor="mediaFeatured" className="text-[10.5px] uppercase tracking-widest text-slate-400 cursor-pointer font-bold">
+                      Feature prominently on homepage releases section
                     </label>
                   </div>
 
-                  {/* Cover Poster URL / Upload */}
-                  <div className="sm:col-span-2 lg:col-span-3">
-                    <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Cover Poster Artwork</label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        placeholder="Image URL or upload a file"
-                        value={mediaWorkForm.coverUrl}
-                        onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, coverUrl: e.target.value })}
-                        className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none flex-1"
-                      />
-                      <label className="bg-white/5 border border-white/10 px-4 py-2 text-xs text-gray-300 rounded-sm cursor-pointer hover:bg-white/10 hover:text-white transition-colors flex items-center shrink-0">
-                        <span>Choose File</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleFileUpload(e, 'mediaCover')}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
+                  <div className="flex justify-end space-x-3 pt-3">
+                    <button 
+                      type="button" 
+                      onClick={() => setMediaViewMode('list')}
+                      className="px-4 py-2 bg-obsidian-950 border border-obsidian-700 text-obsidian-500 hover:text-obsidian-100 text-[10.5px] font-bold uppercase tracking-widest rounded-lg cursor-pointer transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98]"
+                    >
+                      Save Release
+                    </button>
                   </div>
+                </form>
+              )}
 
-                  {/* Video URL (if not image_only and not independent audio work) */}
-                  {mediaWorkForm.mediaType !== 'image_only' && !(mediaWorkForm.type === 'independent_work' && independentSubtype === 'audio') && (
-                    <div className="sm:col-span-2 lg:col-span-3">
-                      <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">
-                        {mediaWorkForm.mediaType === 'youtube' ? 'YouTube Video URL' : 'Upload Video File'}
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder={mediaWorkForm.mediaType === 'youtube' ? 'https://www.youtube.com/watch?v=...' : 'Video URL or upload file'}
-                          value={mediaWorkForm.videoUrl}
-                          onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, videoUrl: e.target.value })}
-                          className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none flex-1"
-                        />
-                        {mediaWorkForm.mediaType === 'upload' && (
-                          <label className="bg-white/5 border border-white/10 px-4 py-2 text-xs text-gray-300 rounded-sm cursor-pointer hover:bg-white/10 hover:text-white transition-colors flex items-center shrink-0">
-                            <span>Upload Video</span>
-                            <input
-                              type="file"
-                              accept="video/*"
-                              onChange={(e) => handleFileUpload(e, 'mediaVideo')}
-                              className="hidden"
-                            />
-                          </label>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Audio URL (only for independent audio work) */}
-                  {mediaWorkForm.type === 'independent_work' && independentSubtype === 'audio' && (
-                    <div className="sm:col-span-2 lg:col-span-3">
-                      <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Audio File (MP3/Soundtrack)</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Audio URL or upload audio file"
-                          value={mediaWorkForm.audioUrl}
-                          onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, audioUrl: e.target.value })}
-                          className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none flex-1"
-                        />
-                        <label className="bg-white/5 border border-white/10 px-4 py-2 text-xs text-gray-300 rounded-sm cursor-pointer hover:bg-white/10 hover:text-white transition-colors flex items-center shrink-0">
-                          <span>Upload Audio</span>
-                          <input
-                            type="file"
-                            accept="audio/*"
-                            onChange={(e) => handleFileUpload(e, 'mediaAudio')}
-                            className="hidden"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Description */}
-                  <div className="sm:col-span-2 lg:col-span-3">
-                    <label className="block text-[10px] uppercase tracking-wider text-gray-400 mb-1.5 font-bold">Project Description</label>
-                    <textarea
-                      rows={3}
-                      placeholder="Enter details about this creative work (synopsis, cast/crew, roles, etc.)"
-                      value={mediaWorkForm.description}
-                      onChange={(e) => setMediaWorkForm({ ...mediaWorkForm, description: e.target.value })}
-                      className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none resize-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    type="submit"
-                    className="bg-gold-500 hover:bg-gold-600 text-black text-xs uppercase tracking-widest font-black px-6 py-3 rounded-sm transition-all duration-300 cursor-pointer shadow-md hover:shadow-gold-500/20"
-                  >
-                    Add Media Work
-                  </button>
-                </div>
-              </form>
-
-              {/* Media Works List Table */}
-              <div className="bg-obsidian-900 border border-white/5 rounded-sm p-6 space-y-4">
-                <h3 className="font-serif text-base font-bold text-white uppercase tracking-widest">
-                  Existing Media Works ({mediaWorks.length})
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {mediaWorks.map((work) => (
-                    <div key={work._id} className="bg-obsidian-950 border border-white/5 rounded p-3 flex justify-between items-center gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        {work.coverUrl ? (
-                          <img
-                            src={work.coverUrl.startsWith('/uploads') ? `${API_URL.replace('/api', '')}${work.coverUrl}` : work.coverUrl}
-                            className="w-10 h-10 object-cover rounded-sm border border-white/10 shrink-0"
-                            alt=""
-                          />
-                        ) : (
-                          <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-sm flex items-center justify-center shrink-0 text-gray-500 text-[10px] font-bold uppercase">
-                            No Cover
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <h5 className="font-serif text-xs font-bold text-gold-200 truncate">{work.title}</h5>
-                          <p className="text-[9px] text-gray-500 uppercase tracking-widest truncate">
-                            {work.type === 'independent_work' 
-                              ? `independent work (${(!!work.audioUrl || /\.(mp3|wav|ogg|aac|m4a|flac)(?:\?|$)/i.test(work.videoUrl || '') || work.videoUrl?.includes('SoundHelix')) ? 'audio' : 'video'})` 
-                              : work.type.replace('_', ' ')} &bull; {work.releaseYear} {work.isFeatured ? '(Featured)' : ''}
-                          </p>
-                        </div>
-                      </div>
-                      <button onClick={() => handleDeleteMediaWork(work._id)} className="text-gray-500 hover:text-red-400 p-2 transition-colors shrink-0">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* TAB 3: MEDIA GALLERY CMS */}
           {activeTab === 'gallery' && (
-            <div className="space-y-8 animate-fade-in text-left">
-              <form onSubmit={handleAddGalleryItem} className="bg-obsidian-900 border border-white/5 p-6 rounded-sm space-y-4">
-                <h3 className="font-serif text-base font-bold text-gold-500 uppercase tracking-widest flex items-center space-x-2">
-                  <Plus size={15} /> <span>Upload Concert / Studio Photo Asset</span>
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Asset Title (e.g. Arena Live Concert)"
-                    value={galleryForm.title}
-                    onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none col-span-2"
-                  />
-                  <select
-                    value={galleryForm.category}
-                    onChange={(e) => setGalleryForm({ ...galleryForm, category: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                  >
-                    <option value="Concerts">Concert Performance</option>
-                    <option value="Studio">Studio Session</option>
-                    <option value="Personal">Personal Moment</option>
-                  </select>
+            <div className="space-y-6 animate-fade-in text-left">
+              
+              {/* Subheader Toggles */}
+              <div className="flex flex-col sm:flex-row justify-between items-center sm:items-center border-b border-obsidian-700/30 pb-4 gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-obsidian-100 font-serif uppercase tracking-wider">Photo Gallery</h2>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Manage live performance shoots and behind-the-scenes photography assets.</p>
                 </div>
-
-                <input
-                  type="text"
-                  required
-                  placeholder="Asset URL (Unsplash link / CDN link)"
-                  value={galleryForm.url}
-                  onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })}
-                  className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                />
-
-                <button type="submit" className="px-6 py-3 bg-gold-500 text-black font-semibold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-400">
-                  Upload Media Asset
-                </button>
-              </form>
-
-              {/* Grid visualizers */}
-              <div className="bg-obsidian-900 border border-white/5 p-6 rounded-sm">
-                <h4 className="font-serif text-sm font-bold text-white mb-6">Gallery Media Items</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {gallery.map((item) => (
-                    <div key={item._id} className="relative aspect-[4/3] rounded-sm overflow-hidden bg-obsidian-950 border border-white/10 group">
-                      <img src={item.url} className="w-full h-full object-cover" alt="" />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button onClick={() => handleDeleteGallery(item._id)} className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors">
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex bg-obsidian-950 border border-obsidian-700/50 p-1 rounded-lg select-none">
+                  <button
+                    onClick={() => setGalleryViewMode('list')}
+                    className={`px-4 py-1.5 text-[9.5px] font-black uppercase tracking-widest rounded-md transition-all cursor-pointer ${
+                      galleryViewMode === 'list' 
+                        ? 'bg-gold-500 text-white shadow-md' 
+                        : 'text-obsidian-500 hover:text-obsidian-100'
+                    }`}
+                  >
+                    View Photos ({gallery.length})
+                  </button>
+                  <button
+                    onClick={() => setGalleryViewMode('add')}
+                    className={`px-4 py-1.5 text-[9.5px] font-black uppercase tracking-widest rounded-md transition-all cursor-pointer ${
+                      galleryViewMode === 'add' 
+                        ? 'bg-gold-500 text-white shadow-md' 
+                        : 'text-obsidian-500 hover:text-obsidian-100'
+                    }`}
+                  >
+                    Upload Photo
+                  </button>
                 </div>
               </div>
+
+              {galleryViewMode === 'list' ? (
+                <div className="bg-obsidian-900 border border-obsidian-700/50 p-6 rounded-xl space-y-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[560px] overflow-y-auto pr-1">
+                    {gallery.map((item) => (
+                      <div key={item._id} className="relative aspect-[4/3] rounded-xl overflow-hidden bg-obsidian-950 border border-obsidian-750/50 group shadow-md hover:border-gold-500/25 transition-all">
+                        <img src={item.url || 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=100'} className="w-full h-full object-cover" alt="" />
+                        <div className="absolute inset-0 bg-black/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3.5 text-left">
+                          <span className="text-[8px] uppercase tracking-widest font-black font-mono text-gold-500 bg-gold-500/10 border border-gold-500/10 px-2 py-0.5 rounded-md w-max">
+                            {item.category}
+                          </span>
+                          <div className="flex items-center justify-between gap-2 mt-auto w-full">
+                            <span className="text-[11px] font-bold text-obsidian-100 truncate max-w-[120px]">{item.title}</span>
+                            <button 
+                              onClick={() => handleDeleteGallery(item._id)} 
+                              className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors cursor-pointer"
+                              title="Delete Photo"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {gallery.length === 0 && (
+                      <p className="text-xs text-slate-500 italic py-10 col-span-full text-center">No images uploaded to visual gallery registry.</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleAddGalleryItem} className="bg-obsidian-900 border border-obsidian-700/50 p-4 sm:p-5 rounded-xl space-y-3.5 w-full">
+                  <div className="border-b border-obsidian-700/50 pb-3">
+                    <h3 className="text-xs uppercase tracking-widest text-gold-500 font-black flex items-center space-x-2">
+                      <Plus size={14} /> <span>Upload Concert / Studio Photo Asset</span>
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Photo Title Label">
+                      <Input
+                        type="text"
+                        required
+                        placeholder="e.g. Cochin Arena Stage Shoot"
+                        value={galleryForm.title}
+                        onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })}
+                      />
+                    </FormField>
+
+                    <FormField label="Gallery Category">
+                      <Select
+                        value={galleryForm.category}
+                        onChange={(e) => setGalleryForm({ ...galleryForm, category: e.target.value })}
+                      >
+                        <option value="Concerts">Live Performances</option>
+                        <option value="Studio">Studio Recording Sessions</option>
+                        <option value="Personal">Behind the Scenes Moments</option>
+                      </Select>
+                    </FormField>
+                  </div>
+
+                  <FormField label="Upload File / Image URL">
+                    <FileUpload
+                      accept="image/*"
+                      onChange={(e) => handleFileUpload(e, 'songCover')} /* reuses cover upload logic */
+                      label="Upload Photo File"
+                      value={galleryForm.url}
+                    />
+                    <Input
+                      type="text"
+                      placeholder="Or enter Image URL"
+                      value={galleryForm.url}
+                      onChange={(e) => setGalleryForm({ ...galleryForm, url: e.target.value })}
+                      className="mt-1.5 bg-obsidian-950/70 border border-obsidian-850 px-3 py-2 text-[10px] text-obsidian-100 rounded-lg focus:outline-none"
+                    />
+                  </FormField>
+
+                  <div className="flex justify-end space-x-3 pt-3">
+                    <button 
+                      type="button" 
+                      onClick={() => setGalleryViewMode('list')}
+                      className="px-4 py-2 bg-obsidian-950 border border-obsidian-700 text-obsidian-500 hover:text-obsidian-100 text-[10.5px] font-bold uppercase tracking-widest rounded-lg cursor-pointer transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98]"
+                    >
+                      Upload Picture
+                    </button>
+                  </div>
+                </form>
+              )}
+
             </div>
           )}
 
           {/* TAB 4: TIMELINE EVENTS MANAGEMENT */}
           {activeTab === 'timeline' && (
-            <div className="space-y-8 animate-fade-in text-left">
-              <form onSubmit={handleAddTimeline} className="bg-obsidian-900 border border-white/5 p-6 rounded-sm space-y-4">
-                <h3 className="font-serif text-base font-bold text-gold-500 uppercase tracking-widest flex items-center space-x-2">
-                  <Plus size={15} /> <span>Create Milestone / Achievement Journey Point</span>
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Year (e.g. 2021)"
-                    value={timelineForm.year}
-                    onChange={(e) => setTimelineForm({ ...timelineForm, year: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Milestone Event Heading"
-                    value={timelineForm.title}
-                    onChange={(e) => setTimelineForm({ ...timelineForm, title: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none col-span-3"
-                  />
+            <div className="space-y-6 animate-fade-in text-left">
+              
+              {/* Subheader Toggles */}
+              <div className="flex flex-col sm:flex-row justify-between items-center sm:items-center border-b border-obsidian-700/30 pb-4 gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-obsidian-100 font-serif uppercase tracking-wider">Journey Roadmap</h2>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Manage chronological timeline points, milestones, and awards shown on Journey details panel.</p>
                 </div>
-
-                <textarea
-                  required
-                  placeholder="Detail Narrative Description of Milestone..."
-                  rows={2}
-                  value={timelineForm.description}
-                  onChange={(e) => setTimelineForm({ ...timelineForm, description: e.target.value })}
-                  className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                ></textarea>
-
-                <button type="submit" className="px-6 py-3 bg-gold-500 text-black font-semibold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-400">
-                  Publish Milestone Point
-                </button>
-              </form>
-
-              {/* Archive list */}
-              <div className="bg-obsidian-900 border border-white/5 p-6 rounded-sm">
-                <h4 className="font-serif text-sm font-bold text-white mb-4">Journey Milestones List</h4>
-                <div className="space-y-3">
-                  {timeline.map((evt) => (
-                    <div key={evt._id} className="bg-obsidian-950 p-4 border border-white/5 rounded-sm flex items-center justify-between">
-                      <div className="text-left">
-                        <span className="font-serif text-gold-500 font-extrabold text-xs pr-2">{evt.year}</span>
-                        <span className="font-semibold text-xs text-white">{evt.title}</span>
-                        <p className="text-[10px] text-gray-500 mt-1">{evt.description}</p>
-                      </div>
-                      <button onClick={() => handleDeleteTimeline(evt._id)} className="text-gray-500 hover:text-red-400 p-2 transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
+                <div className="flex bg-obsidian-950 border border-obsidian-700/50 p-1 rounded-lg select-none">
+                  <button
+                    onClick={() => setTimelineViewMode('list')}
+                    className={`px-4 py-1.5 text-[9.5px] font-black uppercase tracking-widest rounded-md transition-all cursor-pointer ${
+                      timelineViewMode === 'list' 
+                        ? 'bg-gold-500 text-white shadow-md' 
+                        : 'text-obsidian-500 hover:text-obsidian-100'
+                    }`}
+                  >
+                    View Milestones ({timeline.length})
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTimelineViewMode('add');
+                      setEditingTimelineId(null);
+                      setTimelineForm({ year: '', title: '', description: '' });
+                    }}
+                    className={`px-4 py-1.5 text-[9.5px] font-black uppercase tracking-widest rounded-md transition-all cursor-pointer ${
+                      timelineViewMode === 'add' 
+                        ? 'bg-gold-500 text-white shadow-md' 
+                        : 'text-obsidian-500 hover:text-obsidian-100'
+                    }`}
+                  >
+                    Add Milestone
+                  </button>
                 </div>
               </div>
+
+              {timelineViewMode === 'list' ? (
+                <div className="bg-obsidian-900 border border-obsidian-700/50 p-6 rounded-xl space-y-4">
+                  <div className="relative pl-6 border-l border-obsidian-700/60 ml-2.5 space-y-5 max-h-[520px] overflow-y-auto py-2">
+                    {timeline.map((evt) => (
+                      <div key={evt._id} className="relative group text-left">
+                        {/* Timeline circle node */}
+                        <div className="absolute -left-[32.5px] top-2.5 w-3 h-3 rounded-full bg-gold-500 border-2 border-obsidian-900 shadow group-hover:scale-125 transition-transform" />
+                        
+                        <div className="bg-obsidian-950 p-4.5 border border-obsidian-700/40 rounded-xl flex items-center justify-between gap-4">
+                          <div>
+                            <div className="flex items-center space-x-2.5 font-mono">
+                              <span className="text-xs font-black text-gold-500 tracking-widest">{evt.year}</span>
+                              <span className="text-slate-600 text-[10px]">&bull;</span>
+                              <span className="text-xs font-bold text-obsidian-100 uppercase tracking-wider">{evt.title}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-2 leading-relaxed font-light">{evt.description}</p>
+                          </div>
+                          <div className="flex items-center space-x-1 shrink-0 select-none">
+                            <button 
+                              onClick={() => handleStartEditTimeline(evt)} 
+                              className="text-slate-400 hover:text-gold-500 p-2.5 hover:bg-gold-500/10 rounded-lg transition-colors cursor-pointer"
+                              title="Edit Milestone"
+                            >
+                              <Edit size={13} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteTimeline(evt._id)} 
+                              className="text-slate-400 hover:text-red-500 p-2.5 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Milestone"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {timeline.length === 0 && (
+                      <p className="text-xs text-slate-500 italic py-6 pl-2">No journey timeline milestones recorded yet.</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleAddTimeline} className="bg-obsidian-900 border border-obsidian-700/50 p-4 sm:p-5 rounded-xl space-y-3.5 w-full">
+                  <div className="border-b border-obsidian-700/50 pb-3">
+                    <h3 className="text-xs uppercase tracking-widest text-gold-500 font-black flex items-center space-x-2">
+                      <Plus size={14} /> <span>{editingTimelineId ? 'Edit Journey Milestone Point' : 'Create Journey Milestone Point'}</span>
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField label="Milestone Year">
+                      <Input
+                        type="text"
+                        required
+                        placeholder="e.g. 2026"
+                        value={timelineForm.year}
+                        onChange={(e) => setTimelineForm({ ...timelineForm, year: e.target.value })}
+                      />
+                    </FormField>
+                    <div className="col-span-2">
+                      <FormField label="Milestone Header Name">
+                        <Input
+                          type="text"
+                          required
+                          placeholder="e.g. Winner at Golden Award Music Festival"
+                          value={timelineForm.title}
+                          onChange={(e) => setTimelineForm({ ...timelineForm, title: e.target.value })}
+                        />
+                      </FormField>
+                    </div>
+                  </div>
+
+                  <FormField label="Milestone Description Narrative">
+                    <Textarea
+                      required
+                      placeholder="Detail information about what this milestone includes..."
+                      rows={3}
+                      value={timelineForm.description}
+                      onChange={(e) => setTimelineForm({ ...timelineForm, description: e.target.value })}
+                    />
+                  </FormField>
+
+                  <div className="flex justify-end space-x-3 pt-3">
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setTimelineViewMode('list');
+                        setEditingTimelineId(null);
+                        setTimelineForm({ year: '', title: '', description: '' });
+                      }}
+                      className="px-4 py-2 bg-obsidian-950 border border-obsidian-700 text-obsidian-500 hover:text-obsidian-100 text-[10.5px] font-bold uppercase tracking-widest rounded-lg cursor-pointer transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98]"
+                    >
+                      {editingTimelineId ? 'Save Changes' : 'Save Milestone'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
             </div>
           )}
 
-          {/* TAB 5: BLOG PUBLISHING CMS */}
+          {/* TAB 5: BLOG Reflections PUBLISHING CMS */}
           {activeTab === 'blog' && (
-            <div className="space-y-8 animate-fade-in text-left">
-              <form onSubmit={handleAddBlog} className="bg-obsidian-900 border border-white/5 p-6 rounded-sm space-y-4">
-                <h3 className="font-serif text-base font-bold text-gold-500 uppercase tracking-widest flex items-center space-x-2">
-                  <Plus size={15} /> <span>Write Reflection Story / Article Behind the Music</span>
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <input
-                    type="text"
-                    required
-                    placeholder="Article Headline Title"
-                    value={blogForm.title}
-                    onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none col-span-2"
-                  />
-                  <select
-                    value={blogForm.category}
-                    onChange={(e) => setBlogForm({ ...blogForm, category: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
+            <div className="space-y-6 animate-fade-in text-left">
+              
+              {/* Subheader Toggles */}
+              <div className="flex flex-col sm:flex-row justify-between items-center sm:items-center border-b border-obsidian-700/30 pb-4 gap-4">
+                <div>
+                  <h2 className="text-lg font-bold text-obsidian-100 font-serif uppercase tracking-wider">Blog</h2>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Create and format stories, behind-the-scenes diaries, and reflections behind compositions.</p>
+                </div>
+                <div className="flex bg-obsidian-950 border border-obsidian-700/50 p-1 rounded-lg select-none">
+                  <button
+                    onClick={() => setBlogViewMode('list')}
+                    className={`px-4 py-1.5 text-[9.5px] font-black uppercase tracking-widest rounded-md transition-all cursor-pointer ${
+                      blogViewMode === 'list' 
+                        ? 'bg-gold-500 text-white shadow-md' 
+                        : 'text-obsidian-500 hover:text-obsidian-100'
+                    }`}
                   >
-                    <option value="Reflection">Reflection Note</option>
-                    <option value="BTS">Behind the Scenes</option>
-                    <option value="Legacy">Father's Legacy</option>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    placeholder="Banner Cover Image URL"
-                    value={blogForm.coverUrl}
-                    onChange={(e) => setBlogForm({ ...blogForm, coverUrl: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Reading Time (e.g. 4 mins)"
-                    value={blogForm.readingTime}
-                    onChange={(e) => setBlogForm({ ...blogForm, readingTime: e.target.value })}
-                    className="bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                  />
-                </div>
-
-                <input
-                  type="text"
-                  required
-                  placeholder="Short Excerpt Summary..."
-                  value={blogForm.excerpt}
-                  onChange={(e) => setBlogForm({ ...blogForm, excerpt: e.target.value })}
-                  className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none"
-                />
-
-                <textarea
-                  required
-                  placeholder="Article Content Body (supports HTML elements like <p> and <em>)..."
-                  rows={6}
-                  value={blogForm.content}
-                  onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })}
-                  className="w-full bg-obsidian-950 border border-white/10 px-4 py-3 text-xs text-white rounded-sm focus:outline-none font-mono"
-                ></textarea>
-
-                <button type="submit" className="px-6 py-3 bg-gold-500 text-black font-semibold text-xs uppercase tracking-widest rounded-sm hover:bg-gold-400">
-                  Publish Story
-                </button>
-              </form>
-
-              {/* Archive lists */}
-              <div className="bg-obsidian-900 border border-white/5 p-6 rounded-sm">
-                <h4 className="font-serif text-sm font-bold text-white mb-4">Reflections Stories List</h4>
-                <div className="space-y-3">
-                  {blogs.map((blog) => (
-                    <div key={blog._id} className="bg-obsidian-950 p-4 border border-white/5 rounded-sm flex items-center justify-between">
-                      <div className="text-left">
-                        <h5 className="font-serif text-xs font-bold text-gold-200">{blog.title}</h5>
-                        <p className="text-[8px] text-gray-500 uppercase tracking-widest mt-0.5">{blog.category} &bull; {blog.readingTime}</p>
-                      </div>
-                      <button onClick={() => handleDeleteBlog(blog._id)} className="text-gray-500 hover:text-red-400 p-2 transition-colors">
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
+                    All Blogs ({blogs.length})
+                  </button>
+                  <button
+                    onClick={() => setBlogViewMode('add')}
+                    className={`px-4 py-1.5 text-[9.5px] font-black uppercase tracking-widest rounded-md transition-all cursor-pointer ${
+                      blogViewMode === 'add' 
+                        ? 'bg-gold-500 text-white shadow-md' 
+                        : 'text-obsidian-500 hover:text-obsidian-100'
+                    }`}
+                  >
+                    Write Blog
+                  </button>
                 </div>
               </div>
+
+              {blogViewMode === 'list' ? (
+                <div className="bg-obsidian-900 border border-obsidian-700/50 p-6 rounded-xl space-y-4">
+                  <div className="space-y-2.5 max-h-[540px] overflow-y-auto pr-1">
+                    {blogs.map((blog) => (
+                      <div key={blog._id} className="bg-obsidian-950 p-4 border border-obsidian-700/40 rounded-xl flex items-center justify-between gap-4 hover:border-gold-500/25 transition-colors">
+                        <div className="text-left min-w-0">
+                          <h5 className="font-serif text-sm font-bold text-obsidian-100 truncate leading-snug">{blog.title}</h5>
+                          <div className="flex items-center space-x-2.5 text-[8.5px] uppercase tracking-wider text-slate-500 font-bold mt-1.5 font-mono">
+                            <span className="text-gold-500 bg-gold-500/5 border border-gold-500/10 px-2 py-0.5 rounded-md">{blog.category}</span>
+                            <span>&bull;</span>
+                            <span className="flex items-center gap-1"><Clock size={10} /> {blog.readingTime}</span>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleDeleteBlog(blog._id)} 
+                          className="text-slate-400 hover:text-red-500 p-2.5 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer shrink-0"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ))}
+                    {blogs.length === 0 && (
+                      <p className="text-xs text-slate-500 italic py-10 text-center">No blog stories published yet.</p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleAddBlog} className="bg-obsidian-900 border border-obsidian-700/50 p-4 sm:p-5 rounded-xl space-y-3.5 w-full">
+                  <div className="border-b border-obsidian-700/50 pb-3 flex justify-between items-center">
+                    <h3 className="text-xs uppercase tracking-widest text-gold-500 font-black flex items-center space-x-2">
+                      <Plus size={14} /> <span>Compose Reflection Article</span>
+                    </h3>
+                    <div className="flex bg-obsidian-950 border border-obsidian-750 p-1 rounded-lg">
+                      <button
+                        type="button"
+                        onClick={() => setBlogPreviewMode(false)}
+                        className={`px-3 py-1 text-[8.5px] font-black uppercase tracking-widest rounded-md ${!blogPreviewMode ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500 hover:text-obsidian-100'}`}
+                      >
+                        Write
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBlogPreviewMode(true)}
+                        className={`px-3 py-1 text-[8.5px] font-black uppercase tracking-widest rounded-md ${blogPreviewMode ? 'text-gold-500 bg-gold-500/10' : 'text-obsidian-500 hover:text-obsidian-100'}`}
+                      >
+                        Preview
+                      </button>
+                    </div>
+                  </div>
+
+                  {blogPreviewMode ? (
+                    <div className="bg-obsidian-950 border border-obsidian-700/60 rounded-xl p-5 min-h-[360px] text-left">
+                      {blogForm.coverUrl && (
+                        <img src={blogForm.coverUrl} className="w-full h-44 object-cover rounded-lg mb-4 border border-obsidian-750 shadow-md" alt="" />
+                      )}
+                      <div className="flex items-center gap-2 mb-2 font-mono">
+                        <span className="bg-gold-500/10 text-gold-500 px-2 py-0.5 text-[8px] uppercase tracking-widest font-black rounded">{blogForm.category}</span>
+                        <span className="text-[9px] text-slate-500 font-bold flex items-center gap-1"><Clock size={10} /> {blogForm.readingTime}</span>
+                      </div>
+                      <h2 className="font-serif text-lg font-bold text-obsidian-100 mb-2 leading-tight">{blogForm.title || 'Untitled Article'}</h2>
+                      <p className="text-[10.5px] text-slate-400 italic mb-4 font-light">{blogForm.excerpt || 'No summary excerpt provided.'}</p>
+                      <div 
+                        className="text-xs text-slate-300 space-y-3.5 leading-relaxed border-t border-obsidian-700/40 pt-4"
+                        dangerouslySetInnerHTML={{ __html: blogForm.content || '<p className="text-slate-500 italic">No content written yet.</p>' }}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="sm:col-span-2">
+                          <FormField label="Article Headline Title">
+                            <Input
+                              type="text"
+                              required
+                              placeholder="e.g. Behind the Score of Letters Unheard"
+                              value={blogForm.title}
+                              onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })}
+                            />
+                          </FormField>
+                        </div>
+                        <FormField label="Blog Category">
+                          <Select
+                            value={blogForm.category}
+                            onChange={(e) => setBlogForm({ ...blogForm, category: e.target.value })}
+                          >
+                            <option value="Reflection">Reflection Note</option>
+                            <option value="BTS">Behind The Scenes</option>
+                            <option value="Legacy">Father's Legacy</option>
+                          </Select>
+                        </FormField>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Banner Cover Photo URL">
+                          <Input
+                            type="text"
+                            placeholder="https://unsplash.com/..."
+                            value={blogForm.coverUrl}
+                            onChange={(e) => setBlogForm({ ...blogForm, coverUrl: e.target.value })}
+                          />
+                        </FormField>
+                        <FormField label="Reading Time Estimate">
+                          <Input
+                            type="text"
+                            placeholder="e.g. 5 mins"
+                            value={blogForm.readingTime}
+                            onChange={(e) => setBlogForm({ ...blogForm, readingTime: e.target.value })}
+                          />
+                        </FormField>
+                      </div>
+
+                      <FormField label="Short Summary/Excerpt">
+                        <Input
+                          type="text"
+                          required
+                          placeholder="Excerpt preview shown on the list page..."
+                          value={blogForm.excerpt}
+                          onChange={(e) => setBlogForm({ ...blogForm, excerpt: e.target.value })}
+                        />
+                      </FormField>
+
+                      <FormField label="Article Content (Supports HTML, e.g. <p>, <em>, <strong>)">
+                        <Textarea
+                          required
+                          placeholder="Type story content body..."
+                          rows={6}
+                          value={blogForm.content}
+                          onChange={(e) => setBlogForm({ ...blogForm, content: e.target.value })}
+                          className="font-mono text-[11px] leading-relaxed"
+                        />
+                      </FormField>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end space-x-3 pt-3">
+                    <button 
+                      type="button" 
+                      onClick={() => setBlogViewMode('list')}
+                      className="px-4 py-2 bg-obsidian-950 border border-obsidian-700 text-obsidian-500 hover:text-obsidian-100 text-[10.5px] font-bold uppercase tracking-widest rounded-lg cursor-pointer transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      type="submit" 
+                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98]"
+                    >
+                      Publish Story
+                    </button>
+                  </div>
+                </form>
+              )}
+
             </div>
           )}
 
           {/* TAB 6: BOOKING INBOX MESSAGES */}
           {activeTab === 'enquiries' && (
-            <div className="space-y-6 animate-fade-in text-left">
-              <h3 className="font-serif text-lg font-bold text-white mb-2">Booking & Collaboration Inbox</h3>
+            <div className="space-y-5 animate-fade-in text-left">
+              <div>
+                <h3 className="font-serif text-lg font-bold text-obsidian-100 flex items-center gap-2">
+                  <Mail size={16} className="text-gold-500" />
+                  <span>Booking & Inquiry Mailbox</span>
+                </h3>
+                <p className="text-[11px] text-slate-400 mt-0.5">Manage messages from clients, concert organizers, and collaborations.</p>
+              </div>
               
               {messages.length === 0 ? (
-                <p className="text-xs text-gray-500 italic">No messages received yet.</p>
+                <div className="bg-obsidian-900 border border-obsidian-700/50 p-12 rounded-xl text-center shadow">
+                  <span className="text-4xl">✉️</span>
+                  <p className="text-xs text-slate-500 italic mt-3">Mailbox is empty. No messages received yet.</p>
+                </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3.5 max-w-4xl">
                   {messages.map((msg) => (
-                    <div key={msg._id} className={`p-5 rounded-sm border transition-all ${msg.status === 'unread' ? 'bg-gold-500/5 border-gold-500/20 shadow-md shadow-gold-500/5' : 'bg-obsidian-900 border-white/5'}`}>
-                      <div className="flex flex-col sm:flex-row justify-between sm:items-start mb-3">
-                        <div>
-                          <h4 className="font-bold text-xs text-white flex items-center space-x-1.5">
-                            <span>{msg.name}</span>
-                            <span className="text-gray-500 font-normal">&lt;{msg.email}&gt;</span>
-                          </h4>
-                          <p className="text-[9px] text-gold-500 uppercase tracking-widest mt-1 font-semibold">Subject: {msg.subject || 'Inquiry'}</p>
+                    <div 
+                      key={msg._id} 
+                      className={`p-5 rounded-xl border transition-all ${
+                        msg.status === 'unread' 
+                          ? 'bg-gold-500/5 border-gold-500/30 shadow-[0_4px_20px_rgba(37,99,235,0.04)]' 
+                          : 'bg-obsidian-900 border-obsidian-700/50 hover:border-obsidian-750'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
+                        <div className="text-left">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-bold text-xs text-obsidian-100">{msg.name}</span>
+                            <span className="text-slate-500 text-[10px] font-mono">&lt;{msg.email}&gt;</span>
+                            {msg.status === 'unread' && (
+                              <span className="bg-gold-500 text-white text-[7.5px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-full animate-pulse">
+                                New
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[9px] text-gold-500 uppercase tracking-widest mt-1.5 font-black font-mono">
+                            Subject: {msg.subject || 'General Inquiry'}
+                          </p>
                         </div>
                         
-                        <div className="flex items-center space-x-2 mt-2 sm:mt-0 text-[10px]">
+                        <div className="flex items-center gap-2 text-[10px] select-none">
                           {msg.status === 'unread' && (
                             <button 
                               onClick={() => handleMarkMessageRead(msg._id)}
-                              className="text-gold-500 hover:text-gold-400 flex items-center space-x-1"
+                              className="text-gold-500 hover:text-gold-600 font-bold uppercase tracking-widest text-[8.5px] flex items-center space-x-1.5 p-1.5 hover:bg-gold-500/10 rounded-lg cursor-pointer"
                             >
                               <CheckCircle2 size={12} />
                               <span>Mark Read</span>
                             </button>
                           )}
+                          <a 
+                            href={`mailto:${msg.email}?subject=Re: ${msg.subject || 'Inquiry'}&body=Hi ${msg.name},`}
+                            className="bg-gold-500/10 text-gold-500 border border-gold-500/25 hover:bg-gold-500 hover:text-white px-2.5 py-1 text-[9px] uppercase font-bold tracking-widest rounded-lg flex items-center gap-1 transition-all"
+                          >
+                            <MessageSquare size={10} />
+                            <span>Reply</span>
+                          </a>
                           <button 
                             onClick={() => handleDeleteMessage(msg._id)}
-                            className="text-gray-500 hover:text-red-400 flex items-center space-x-1 pl-2 border-l border-white/10"
+                            className="text-slate-500 hover:text-red-400 p-1.5 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                            title="Delete enquiry message"
                           >
                             <Trash2 size={12} />
-                            <span>Delete</span>
                           </button>
                         </div>
                       </div>
 
-                      <p className="text-xs text-gray-300 leading-relaxed font-light mt-3 border-t border-white/5 pt-3">
+                      <p className="text-xs text-slate-300 leading-relaxed font-light mt-4 border-t border-obsidian-700/50 pt-4 text-left whitespace-pre-wrap">
                         {msg.message}
                       </p>
                       
                       {msg.phone && (
-                        <p className="text-[10px] text-gray-500 mt-2">
-                          Contact Phone: <span className="text-gray-400">{msg.phone}</span>
-                        </p>
+                        <div className="text-[9.5px] text-slate-500 mt-3 font-mono flex items-center space-x-1">
+                          <span>Phone:</span>
+                          <span className="text-slate-300 font-semibold">{msg.phone}</span>
+                        </div>
                       )}
                     </div>
                   ))}
@@ -1487,16 +2427,338 @@ export default function App() {
             </div>
           )}
 
+          {/* TAB 7: SITE CONTENT EDITOR */}
+          {activeTab === 'site-content' && (
+            <div className="space-y-6 animate-fade-in text-left">
+              <div>
+                <h2 className="font-serif text-xl font-bold tracking-tight text-obsidian-100 flex items-center space-x-2">
+                  <Settings size={18} className="text-gold-500" />
+                  <span>Page Content Editor</span>
+                </h2>
+                <p className="text-[11px] text-slate-400 mt-0.5">Configure biography narratives, FAQs, and contact credentials shown on your landing website.</p>
+              </div>
+
+              {/* Horizontal configuration bar */}
+              <div className="flex flex-wrap bg-obsidian-900 border border-obsidian-700/50 p-1.5 rounded-xl gap-2 select-none shadow">
+                {[
+                  { id: 'hero', label: 'Hero Cover' },
+                  { id: 'about', label: 'About Story' },
+                  { id: 'father_legacy', label: "Father's Legacy" },
+                  { id: 'footer', label: 'Footer Links' },
+                  { id: 'faqs', label: 'FAQs Config' }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveContentSection(tab.id)}
+                    className={`px-5 py-2 rounded-lg text-[10px] uppercase tracking-widest font-black transition-all cursor-pointer flex-1 sm:flex-initial text-center ${
+                      activeContentSection === tab.id
+                        ? 'bg-gold-500 text-white shadow-md'
+                        : 'text-obsidian-500 hover:text-obsidian-100 hover:bg-obsidian-850'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Settings sheets */}
+              <div className="w-full">
+                  
+                  {/* ===== HERO SECTION EDITOR ===== */}
+                  {activeContentSection === 'hero' && (
+                    <div className="bg-obsidian-900 border border-obsidian-700/50 p-4 sm:p-5 rounded-xl space-y-3 shadow">
+                      <div className="flex items-center justify-between border-b border-obsidian-700/40 pb-3">
+                        <h3 className="text-xs uppercase tracking-widest text-gold-500 font-black">Hero Header Cover settings</h3>
+                        {contentSaveSuccess === 'hero' && <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8.5px] uppercase tracking-widest font-black px-2 py-0.5 rounded font-mono animate-pulse">✓ Saved Settings</span>}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Subtitle Banner Tagline">
+                          <Input type="text" value={heroForm.subtitle} onChange={e => setHeroForm({...heroForm, subtitle: e.target.value})} placeholder="The Sound. The Story." />
+                        </FormField>
+                        <FormField label="Signature Name">
+                          <Input type="text" value={heroForm.signature} onChange={e => setHeroForm({...heroForm, signature: e.target.value})} placeholder="Midhun Saji Ram" />
+                        </FormField>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <FormField label="Title Line 1">
+                          <Input type="text" value={heroForm.titleLine1} onChange={e => setHeroForm({...heroForm, titleLine1: e.target.value})} placeholder="A Legacy" />
+                        </FormField>
+                        <FormField label="Title Line 2">
+                          <Input type="text" value={heroForm.titleLine2} onChange={e => setHeroForm({...heroForm, titleLine2: e.target.value})} placeholder="He Gave." />
+                        </FormField>
+                        <FormField label="Title Line 3 (Italic highlight)">
+                          <Input type="text" value={heroForm.titleLine3} onChange={e => setHeroForm({...heroForm, titleLine3: e.target.value})} placeholder="A Voice I Carry." />
+                        </FormField>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Main Brief Narrative">
+                          <Textarea rows={2} value={heroForm.description} onChange={e => setHeroForm({...heroForm, description: e.target.value})} placeholder="From the melodies Saji Ram created..." />
+                        </FormField>
+
+                        <FormField label="Prominent Quote Text">
+                          <Textarea rows={2} value={heroForm.quote} onChange={e => setHeroForm({...heroForm, quote: e.target.value})} placeholder='"He wrote the scores..."' />
+                        </FormField>
+                      </div>
+
+                      <FormField label="Hero Wallpaper Image">
+                        <FileUpload accept="image/*" onChange={e => handleSiteContentImageUpload(e, 'hero', 'heroImage')} label="Upload Cover Photo" value={heroForm.heroImage} />
+                        <Input type="text" value={heroForm.heroImage} onChange={e => setHeroForm({...heroForm, heroImage: e.target.value})} placeholder="Or Enter Image URL" className="mt-1.5 bg-obsidian-950/70 border border-obsidian-850 px-3 py-2 text-[10px] text-obsidian-100 rounded-lg focus:outline-none" />
+                      </FormField>
+
+                      <div className="flex justify-end pt-2">
+                        <button onClick={() => saveSiteContentSection('hero', heroForm)} disabled={contentSaving} className="px-5 py-2.5 bg-gold-500 hover:bg-gold-600 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-widest rounded-lg transition-all flex items-center space-x-2 cursor-pointer shadow-lg active:scale-98 shadow-gold-500/10">
+                          <Save size={13} />
+                          <span>{contentSaving ? 'Saving...' : 'Save Settings'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ===== ABOUT SECTION EDITOR ===== */}
+                  {activeContentSection === 'about' && (
+                    <div className="bg-obsidian-900 border border-obsidian-700/50 p-4 sm:p-5 rounded-xl space-y-3 shadow">
+                      <div className="flex items-center justify-between border-b border-obsidian-700/40 pb-3">
+                        <h3 className="text-xs uppercase tracking-widest text-gold-500 font-black">Biography Narrative Details</h3>
+                        {contentSaveSuccess === 'about' && <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8.5px] uppercase tracking-widest font-black px-2 py-0.5 rounded font-mono animate-pulse">✓ Saved Settings</span>}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Subtitle Section label">
+                          <Input type="text" value={aboutForm.subtitle} onChange={e => setAboutForm({...aboutForm, subtitle: e.target.value})} placeholder="Biography Story" />
+                        </FormField>
+                        <FormField label="Headline statement (use \n for line breaks)">
+                          <Input type="text" value={aboutForm.title} onChange={e => setAboutForm({...aboutForm, title: e.target.value})} placeholder="Melodies bridging cinematic scores..." />
+                        </FormField>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Biographical Narrative Paragraph 1">
+                          <Textarea rows={3} value={aboutForm.paragraph1} onChange={e => setAboutForm({...aboutForm, paragraph1: e.target.value})} />
+                        </FormField>
+
+                        <FormField label="Secondary Paragraph 2">
+                          <Textarea rows={3} value={aboutForm.paragraph2} onChange={e => setAboutForm({...aboutForm, paragraph2: e.target.value})} />
+                        </FormField>
+                      </div>
+
+                      <FormField label="Portrait Studio Cover Image">
+                        <FileUpload accept="image/*" onChange={e => handleSiteContentImageUpload(e, 'about', 'portraitImage')} label="Upload portrait image file" value={aboutForm.portraitImage} />
+                        <Input type="text" value={aboutForm.portraitImage} onChange={e => setAboutForm({...aboutForm, portraitImage: e.target.value})} placeholder="Or Enter Image URL" className="mt-1.5 bg-obsidian-950/70 border border-obsidian-850 px-3 py-2 text-[10px] text-obsidian-100 rounded-lg focus:outline-none" />
+                      </FormField>
+
+                      {/* Stats Editor */}
+                      <div className="space-y-2 text-left">
+                        <label className="block text-[9.5px] uppercase tracking-widest text-slate-400 font-bold">Achievements counters</label>
+                        <div className="grid grid-cols-1 gap-2.5">
+                          {(aboutForm.stats || []).map((stat, idx) => (
+                            <div key={idx} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 bg-obsidian-950 border border-obsidian-700/40 p-3.5 rounded-lg">
+                              <Select value={stat.iconName} onChange={e => { const newStats = [...aboutForm.stats]; newStats[idx].iconName = e.target.value; setAboutForm({...aboutForm, stats: newStats}); }}>
+                                <option value="Music">Music Disc Icon</option>
+                                <option value="Award">Achievement Award</option>
+                                <option value="Users">Artists Collaborated</option>
+                                <option value="Heart">Aesthetic Heart</option>
+                              </Select>
+                              <Input type="text" value={stat.value} onChange={e => { const newStats = [...aboutForm.stats]; newStats[idx].value = e.target.value; setAboutForm({...aboutForm, stats: newStats}); }} placeholder="Value (e.g. 50+)" className="sm:w-24 shrink-0" />
+                              <Input type="text" value={stat.label} onChange={e => { const newStats = [...aboutForm.stats]; newStats[idx].label = e.target.value; setAboutForm({...aboutForm, stats: newStats}); }} placeholder="Stat Name Label (e.g. Songs Composed)" />
+                              <button onClick={() => { const newStats = aboutForm.stats.filter((_, i) => i !== idx); setAboutForm({...aboutForm, stats: newStats}); }} className="text-slate-455 hover:text-red-550 p-2 hover:bg-red-550/10 rounded transition-colors cursor-pointer shrink-0"><Trash2 size={13} /></button>
+                            </div>
+                          ))}
+                          <button onClick={() => setAboutForm({...aboutForm, stats: [...(aboutForm.stats || []), { iconName: 'Music', value: '', label: '' }]})} className="text-gold-500 hover:text-gold-600 text-[9px] uppercase tracking-widest font-black flex items-center space-x-1 cursor-pointer py-1.5 w-max select-none">
+                            <Plus size={12} /><span>Add Counter Stat</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-end pt-2">
+                        <button onClick={() => saveSiteContentSection('about', aboutForm)} disabled={contentSaving} className="px-5 py-2.5 bg-gold-500 hover:bg-gold-600 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-widest rounded-lg transition-all flex items-center space-x-2 cursor-pointer shadow-lg active:scale-98 shadow-gold-500/10">
+                          <Save size={13} />
+                          <span>{contentSaving ? 'Saving...' : 'Save Settings'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ===== FATHER'S LEGACY EDITOR ===== */}
+                  {activeContentSection === 'father_legacy' && (
+                    <div className="bg-obsidian-900 border border-obsidian-700/50 p-4 sm:p-5 rounded-xl space-y-3 shadow">
+                      <div className="flex items-center justify-between border-b border-obsidian-700/40 pb-3">
+                        <h3 className="text-xs uppercase tracking-widest text-gold-500 font-black">Father's Musical Legacy Settings</h3>
+                        {contentSaveSuccess === 'father_legacy' && <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8.5px] uppercase tracking-widest font-black px-2 py-0.5 rounded font-mono animate-pulse">✓ Saved Settings</span>}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Subtitle Banner Header">
+                          <Input type="text" value={legacyForm.subtitle} onChange={e => setLegacyForm({...legacyForm, subtitle: e.target.value})} placeholder="Saji Ram legacy" />
+                        </FormField>
+                        <FormField label="Headline statement (use \n for line breaks)">
+                          <Input type="text" value={legacyForm.title} onChange={e => setLegacyForm({...legacyForm, title: e.target.value})} placeholder="Before I found my voice..." />
+                        </FormField>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Biographical Description Paragraph 1">
+                          <Textarea rows={3} value={legacyForm.paragraph1} onChange={e => setLegacyForm({...legacyForm, paragraph1: e.target.value})} />
+                        </FormField>
+
+                        <FormField label="Secondary Description Paragraph 2">
+                          <Textarea rows={3} value={legacyForm.paragraph2} onChange={e => setLegacyForm({...legacyForm, paragraph2: e.target.value})} />
+                        </FormField>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Main Legacy Background Photo">
+                          <FileUpload accept="image/*" onChange={e => handleSiteContentImageUpload(e, 'father_legacy', 'mainImage')} label="Upload Main Photo" value={legacyForm.mainImage} />
+                          <Input type="text" value={legacyForm.mainImage} onChange={e => setLegacyForm({...legacyForm, mainImage: e.target.value})} placeholder="Or Enter Image URL" className="mt-1.5 bg-obsidian-950/70 border border-obsidian-850 px-3 py-2 text-[10px] text-obsidian-100 rounded-lg focus:outline-none" />
+                        </FormField>
+                        <FormField label="Polaroid Visual Image">
+                          <FileUpload accept="image/*" onChange={e => handleSiteContentImageUpload(e, 'father_legacy', 'polaroidImage')} label="Upload Polaroid Photo" value={legacyForm.polaroidImage} />
+                          <Input type="text" value={legacyForm.polaroidImage} onChange={e => setLegacyForm({...legacyForm, polaroidImage: e.target.value})} placeholder="Or Enter Image URL" className="mt-1.5 bg-obsidian-950/70 border border-obsidian-850 px-3 py-2 text-[10px] text-obsidian-100 rounded-lg focus:outline-none" />
+                        </FormField>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Polaroid Caption text">
+                          <Input type="text" value={legacyForm.polaroidCaption} onChange={e => setLegacyForm({...legacyForm, polaroidCaption: e.target.value})} placeholder="e.g. Saji Ram" />
+                        </FormField>
+                        <FormField label="Cursive Script signature line">
+                          <Input type="text" value={legacyForm.cursiveText} onChange={e => setLegacyForm({...legacyForm, cursiveText: e.target.value})} placeholder="e.g. A legacy that lives on..." />
+                        </FormField>
+                      </div>
+
+                      <div className="flex justify-end pt-2">
+                        <button onClick={() => saveSiteContentSection('father_legacy', legacyForm)} disabled={contentSaving} className="px-5 py-2.5 bg-gold-500 hover:bg-gold-600 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-widest rounded-lg transition-all flex items-center space-x-2 cursor-pointer shadow-lg active:scale-98 shadow-gold-500/10">
+                          <Save size={13} />
+                          <span>{contentSaving ? 'Saving...' : 'Save Settings'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ===== FOOTER EDITOR ===== */}
+                  {activeContentSection === 'footer' && (
+                    <div className="bg-obsidian-900 border border-obsidian-700/50 p-4 sm:p-5 rounded-xl space-y-3 shadow">
+                      <div className="flex items-center justify-between border-b border-obsidian-700/40 pb-3">
+                        <h3 className="text-xs uppercase tracking-widest text-gold-500 font-black">Footer Info & Contact channels</h3>
+                        {contentSaveSuccess === 'footer' && <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8.5px] uppercase tracking-widest font-black px-2 py-0.5 rounded font-mono animate-pulse">✓ Saved Settings</span>}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Brand Header Name">
+                          <Input type="text" value={footerForm.brandName} onChange={e => setFooterForm({...footerForm, brandName: e.target.value})} placeholder="Midhun Saji Ram" />
+                        </FormField>
+                        <FormField label="Brand Tagline text label">
+                          <Input type="text" value={footerForm.brandTagline} onChange={e => setFooterForm({...footerForm, brandTagline: e.target.value})} placeholder="Music Director & Composer" />
+                        </FormField>
+                      </div>
+
+                      <FormField label="Bottom Brand Description text">
+                        <Textarea rows={2} value={footerForm.description} onChange={e => setFooterForm({...footerForm, description: e.target.value})} />
+                      </FormField>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Booking Inquiry Email">
+                          <Input type="email" value={footerForm.bookingEmail} onChange={e => setFooterForm({...footerForm, bookingEmail: e.target.value})} placeholder="bookings@midhunsajiram.com" />
+                        </FormField>
+                        <FormField label="Artist Base Location">
+                          <Input type="text" value={footerForm.location} onChange={e => setFooterForm({...footerForm, location: e.target.value})} placeholder="Kochi, Kerala, India" />
+                        </FormField>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <FormField label="Spotify Artist URL">
+                          <Input type="text" value={footerForm.spotifyUrl} onChange={e => setFooterForm({...footerForm, spotifyUrl: e.target.value})} placeholder="https://spotify.com" />
+                        </FormField>
+                        <FormField label="YouTube Studio URL">
+                          <Input type="text" value={footerForm.youtubeUrl} onChange={e => setFooterForm({...footerForm, youtubeUrl: e.target.value})} placeholder="https://youtube.com" />
+                        </FormField>
+                        <FormField label="Instagram Profile URL">
+                          <Input type="text" value={footerForm.instagramUrl} onChange={e => setFooterForm({...footerForm, instagramUrl: e.target.value})} placeholder="https://instagram.com" />
+                        </FormField>
+                      </div>
+
+                      <div className="flex justify-end pt-2">
+                        <button onClick={() => saveSiteContentSection('footer', footerForm)} disabled={contentSaving} className="px-5 py-2.5 bg-gold-500 hover:bg-gold-600 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-widest rounded-lg transition-all flex items-center space-x-2 cursor-pointer shadow-lg active:scale-98 shadow-gold-500/10">
+                          <Save size={13} />
+                          <span>{contentSaving ? 'Saving...' : 'Save Settings'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ===== FAQ MANAGER ===== */}
+                  {activeContentSection === 'faqs' && (
+                    <div className="bg-obsidian-900 border border-obsidian-700/50 p-4 sm:p-5 rounded-xl space-y-3 shadow">
+                      <div className="flex items-center justify-between border-b border-obsidian-700/40 pb-3">
+                        <h3 className="text-xs uppercase tracking-widest text-gold-500 font-black">FAQ Accordion Listings</h3>
+                        {contentSaveSuccess === 'faqs' && <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8.5px] uppercase tracking-widest font-black px-2 py-0.5 rounded font-mono animate-pulse">✓ Saved Settings</span>}
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <FormField label="Section subtitle mini header">
+                          <Input type="text" value={faqsForm.subtitle} onChange={e => setFaqsForm({...faqsForm, subtitle: e.target.value})} placeholder="FAQs" />
+                        </FormField>
+                        <FormField label="Accordion segment title">
+                          <Input type="text" value={faqsForm.title} onChange={e => setFaqsForm({...faqsForm, title: e.target.value})} placeholder="Frequently Asked Questions" />
+                        </FormField>
+                      </div>
+
+                      {/* Existing FAQ Items */}
+                      <div className="space-y-3.5 pt-2 text-left">
+                        <label className="block text-[9.5px] uppercase tracking-widest text-slate-400 font-bold">Questions & Answers ({(faqsForm.items || []).length})</label>
+                        {(faqsForm.items || []).map((item, idx) => (
+                          <div key={idx} className="bg-obsidian-950 border border-obsidian-700/40 p-4 rounded-xl space-y-3 relative group">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 space-y-2.5">
+                                <Input type="text" value={item.question} onChange={e => { const items = [...faqsForm.items]; items[idx].question = e.target.value; setFaqsForm({...faqsForm, items}); }} placeholder="Question Title Topic" />
+                                <Textarea rows={2} value={item.answer} onChange={e => { const items = [...faqsForm.items]; items[idx].answer = e.target.value; setFaqsForm({...faqsForm, items}); }} placeholder="Answer description details" />
+                              </div>
+                              <div className="flex flex-col gap-1 shrink-0 select-none pt-2 font-mono">
+                                {idx > 0 && (
+                                  <button onClick={() => { const items = [...faqsForm.items]; [items[idx-1], items[idx]] = [items[idx], items[idx-1]]; setFaqsForm({...faqsForm, items}); }} className="text-slate-455 hover:text-gold-500 p-1.5 hover:bg-obsidian-850 rounded text-xs cursor-pointer" title="Move Up">▲</button>
+                                )}
+                                {idx < (faqsForm.items || []).length - 1 && (
+                                  <button onClick={() => { const items = [...faqsForm.items]; [items[idx], items[idx+1]] = [items[idx+1], items[idx]]; setFaqsForm({...faqsForm, items}); }} className="text-slate-455 hover:text-gold-500 p-1.5 hover:bg-obsidian-850 rounded text-xs cursor-pointer" title="Move Down">▼</button>
+                                )}
+                                <button onClick={() => { const items = faqsForm.items.filter((_, i) => i !== idx); setFaqsForm({...faqsForm, items}); }} className="text-slate-500 hover:text-red-500 p-1.5 hover:bg-red-550/10 rounded transition-colors cursor-pointer" title="Delete FAQ"><Trash2 size={13} /></button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Add New FAQ */}
+                      <div className="bg-obsidian-950 border border-gold-500/20 p-4.5 rounded-xl space-y-3.5 mt-4">
+                        <label className="block text-[9.5px] uppercase tracking-widest text-gold-500 font-black">Create a new FAQ Node</label>
+                        <Input type="text" value={newFaqQuestion} onChange={e => setNewFaqQuestion(e.target.value)} placeholder="Enter new FAQ question..." />
+                        <Textarea rows={2} value={newFaqAnswer} onChange={e => setNewFaqAnswer(e.target.value)} placeholder="Enter detailed FAQ answer narrative..." />
+                        <button onClick={() => { if (newFaqQuestion.trim() && newFaqAnswer.trim()) { setFaqsForm({...faqsForm, items: [...(faqsForm.items || []), { question: newFaqQuestion, answer: newFaqAnswer }]}); setNewFaqQuestion(''); setNewFaqAnswer(''); } }} className="text-gold-500 hover:text-gold-600 text-[9px] uppercase tracking-widest font-black flex items-center space-x-1 cursor-pointer py-1 select-none">
+                          <Plus size={12} /><span>Add Node</span>
+                        </button>
+                      </div>
+
+                      <div className="flex justify-end pt-2">
+                        <button onClick={() => saveSiteContentSection('faqs', faqsForm)} disabled={contentSaving} className="px-5 py-2.5 bg-gold-500 hover:bg-gold-600 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-widest rounded-lg transition-all flex items-center space-x-2 cursor-pointer shadow-lg active:scale-98 shadow-gold-500/10">
+                          <Save size={13} />
+                          <span>{contentSaving ? 'Saving...' : 'Save Settings'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+              </div>
+
+            </div>
+          )}
+
         </div>
 
         {/* Footer */}
-        <footer className="h-12 border-t border-white/5 px-8 flex items-center justify-between text-[10px] text-gray-500 bg-obsidian-900/10">
+        <footer className="h-10 border-t border-obsidian-750 px-6 flex items-center justify-between text-[9px] text-slate-500 bg-obsidian-900/10 shrink-0 select-none">
           <span>&copy; {new Date().getFullYear()} Midhun Saji Ram. All Rights Reserved.</span>
-          {/* <div className="flex items-center space-x-1">
-            <span>Designed with</span>
-            <Heart size={9} className="text-gold-500 fill-gold-500 animate-pulse" />
-            <span>Passion for Music</span>
-          </div> */}
+          
         </footer>
 
       </main>

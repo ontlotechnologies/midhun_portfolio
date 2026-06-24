@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, FileText, Download } from 'lucide-react';
 
-export default function FaqRiderSection() {
+export default function FaqRiderSection({ content }) {
   const [openFaq, setOpenFaq] = useState(null);
+  const c = content || {};
 
-  const faqs = [
+  const defaultFaqs = [
     {
       question: "How can I commission Midhun for a film score or composition?",
       answer: "You can reach out directly via the Booking Contact Form below with details about your script, timeline, and production scale. We schedule initial music-direction consultations to discuss thematic references and instrumentation requirements."
@@ -24,6 +25,8 @@ export default function FaqRiderSection() {
     }
   ];
 
+  const faqs = c.items && c.items.length > 0 ? c.items : defaultFaqs;
+
   const toggleFaq = (index) => {
     setOpenFaq(openFaq === index ? null : index);
   };
@@ -39,10 +42,10 @@ export default function FaqRiderSection() {
         {/* Section Header */}
         <div className="text-center mb-16 flex flex-col items-center">
           <span className="text-[9px] uppercase tracking-[0.3em] text-gold-600 font-bold block mb-1 text-center">
-            Got Questions?
+            {c.subtitle || 'Got Questions?'}
           </span>
           <h2 className="font-serif text-charcoal-900 text-3xl md:text-5xl font-bold tracking-tight text-center">
-            Frequently Asked Questions
+            {c.title || 'Frequently Asked Questions'}
           </h2>
           <div className="h-[1.5px] w-16 bg-gold-500 mt-4 mx-auto"></div>
         </div>

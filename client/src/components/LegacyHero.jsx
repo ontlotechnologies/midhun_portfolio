@@ -2,7 +2,9 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, ArrowRight, Quote } from 'lucide-react';
 
-export default function LegacyHero({ onPlayClick, onExploreClick }) {
+export default function LegacyHero({ onPlayClick, onExploreClick, content }) {
+  const c = content || {};
+  
   return (
     
     <section id="home" className="relative min-h-[95vh] lg:min-h-screen flex items-center justify-center pt-28 pb-16 lg:pt-20 lg:pb-10 overflow-hidden bg-white">
@@ -10,7 +12,7 @@ export default function LegacyHero({ onPlayClick, onExploreClick }) {
       {/* Background Image layer */}
       <div className="absolute inset-0 z-0">
         <img
-          src="/midhunHero.png"
+          src={c.heroImage || "/midhunHero.png"}
           alt="Midhun Saji Ram & Saji Ram Legacy Banner"
           className="w-full h-full object-cover object-[center_35%] filter brightness-95"
         />
@@ -31,7 +33,7 @@ export default function LegacyHero({ onPlayClick, onExploreClick }) {
           >
             <span className="h-[1.5px] w-6 bg-gold-500"></span>
             <span className="text-[10px] md:text-xs uppercase tracking-[0.3em] text-gold-400 lg:text-gold-600 font-bold">
-              The Sound. The Story. The Legacy.
+              {c.subtitle || 'The Sound. The Story. The Legacy.'}
             </span>
           </motion.div>
 
@@ -41,9 +43,9 @@ export default function LegacyHero({ onPlayClick, onExploreClick }) {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="font-serif text-white lg:text-charcoal-900 text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.05] mb-4 font-normal"
           >
-            A Legacy<br />
-            He Gave.<br />
-            <span className="text-gold-gradient font-serif italic font-medium block mt-1">A Voice I Carry.</span>
+            {c.titleLine1 || 'A Legacy'}<br />
+            {c.titleLine2 || 'He Gave.'}<br />
+            <span className="text-gold-gradient font-serif italic font-medium block mt-1">{c.titleLine3 || 'A Voice I Carry.'}</span>
           </motion.h1>
 
           {/* Cursive divider line */}
@@ -55,7 +57,7 @@ export default function LegacyHero({ onPlayClick, onExploreClick }) {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="text-cream-200 lg:text-charcoal-800 text-sm md:text-base max-w-sm mb-6 leading-relaxed font-light"
           >
-            From the melodies he created to the ones I dream today, this is our journey of music, memories and meaning.
+            {c.description || 'From the melodies he created to the ones I dream today, this is our journey of music, memories and meaning.'}
           </motion.p>
 
           <motion.div
@@ -96,11 +98,11 @@ export default function LegacyHero({ onPlayClick, onExploreClick }) {
             <Quote size={18} className="text-gold-500 mb-2 opacity-80" fill="currentColor" />
             
             <p className="font-serif text-white text-sm md:text-base leading-relaxed italic font-light drop-shadow-md select-none">
-              "He wrote the melodies that touched millions. I carry them forward."
+              {c.quote || '"He wrote the melodies that touched millions. I carry them forward."'}
             </p>
             
             <span className="font-script text-gold-400 text-lg md:text-xl block mt-2 text-right tracking-wide select-none drop-shadow-sm">
-              Midhun Saji Ram
+              {c.signature || 'Midhun Saji Ram'}
             </span>
           </motion.div>
 

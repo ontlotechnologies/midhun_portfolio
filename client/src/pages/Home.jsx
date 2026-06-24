@@ -31,7 +31,8 @@ export default function Home({
   navigate,
   onSelectCategory,
   onWorkClick,
-  loading
+  loading,
+  siteContent = {}
 }) {
   const [activeVideo, setActiveVideo] = useState(null); // { id, mediaType, url }
   const [activeLightboxImage, setActiveLightboxImage] = useState(null); // url
@@ -244,21 +245,22 @@ export default function Home({
       {/* 1. Hero Landing Story */}
       <LegacyHero 
         onPlayClick={handleListenNow} 
-        onExploreClick={handleExploreWorks} 
+        onExploreClick={handleExploreWorks}
+        content={siteContent.hero}
       />
 
       <hr className="border-t border-cream-300/60 mx-auto max-w-7xl" />
 
       {/* 2. Artist Editorial Intro */}
       <ScrollReveal>
-        <AboutSection onActionClick={handleExploreWorks} />
+        <AboutSection onActionClick={handleExploreWorks} content={siteContent.about} />
       </ScrollReveal>
 
       <hr className="border-t border-cream-300/60 mx-auto max-w-7xl" />
 
       {/* 3. Legacy Tribute Collage */}
       <ScrollReveal>
-        <FatherLegacy onStoryClick={handleReadFatherStory} />
+        <FatherLegacy onStoryClick={handleReadFatherStory} content={siteContent.father_legacy} />
       </ScrollReveal>
 
       <hr className="border-t border-cream-300/60 mx-auto max-w-7xl" />
@@ -437,7 +439,7 @@ export default function Home({
 
       {/* 8. FAQ & Artist Rider Section */}
       <ScrollReveal>
-        <FaqRiderSection />
+        <FaqRiderSection content={siteContent.faqs} />
       </ScrollReveal>
 
       <hr className="border-t border-cream-300/60 mx-auto max-w-7xl" />

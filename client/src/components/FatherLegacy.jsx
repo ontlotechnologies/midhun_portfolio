@@ -2,7 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 
-export default function FatherLegacy({ onStoryClick }) {
+export default function FatherLegacy({ onStoryClick, content }) {
+  const c = content || {};
+  
+  const titleLines = (c.title || "Before I found my voice,\nI heard his.").split('\n');
+
   return (
     <section className="relative py-14 bg-[#111a2e] overflow-hidden text-white border-t border-white/5">
       
@@ -19,7 +23,7 @@ export default function FatherLegacy({ onStoryClick }) {
             <div className="relative w-[72%] aspect-[1.2/1] bg-[#111a2e] border border-white/10 p-2.5 shadow-2xl rounded z-10">
               <div className="w-full h-full overflow-hidden bg-black rounded">
                 <img
-                  src="https://images.unsplash.com/photo-1610964198883-01c0c61e08cb?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fG11c2ljJTIwYXJ0aXN0JTIwYWdlZHxlbnwwfHwwfHx8MA%3D%3D"
+                  src={c.mainImage || "https://images.unsplash.com/photo-1610964198883-01c0c61e08cb?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fG11c2ljJTIwYXJ0aXN0JTIwYWdlZHxlbnwwfHwwfHx8MA%3D%3D"}
                   alt="Saji Ram composing at desk"
                   className="w-full h-full object-cover filter grayscale contrast-[1.1] brightness-[0.88] opacity-90"
                 />
@@ -33,19 +37,19 @@ export default function FatherLegacy({ onStoryClick }) {
             >
               <div className="w-full h-[84%] overflow-hidden bg-neutral-800 rounded">
                 <img
-                  src="https://plus.unsplash.com/premium_photo-1726804910786-9e72710480d3?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8bXVzaWMlMjBhcnRpc3QlMjBhZ2VkfGVufDB8fDB8fHww"
+                  src={c.polaroidImage || "https://plus.unsplash.com/premium_photo-1726804910786-9e72710480d3?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8bXVzaWMlMjBhcnRpc3QlMjBhZ2VkfGVufDB8fDB8fHww"}
                   alt="Saji Ram portrait"
                   className="w-full h-full object-cover filter sepia-[0.15] brightness-[0.95] contrast-[1.05]"
                 />
               </div>
               <div className="pt-2 text-center">
-                <span className="font-serif text-[8px] text-neutral-800 font-extrabold uppercase tracking-widest block">Saji Ram</span>
+                <span className="font-serif text-[8px] text-neutral-800 font-extrabold uppercase tracking-widest block">{c.polaroidCaption || 'Saji Ram'}</span>
               </div>
             </div>
 
             {/* Cursive Signature text at the bottom right */}
             <div className="absolute bottom-6 right-20 z-30 transform -rotate-6 font-script text-3.5xl text-white/95 select-none drop-shadow-[0_2px_5px_rgba(0,0,0,0.5)]">
-              A legacy that lives on
+              {c.cursiveText || 'A legacy that lives on'}
             </div>
 
           </div>
@@ -55,22 +59,26 @@ export default function FatherLegacy({ onStoryClick }) {
             
             <div className="flex flex-col items-start mb-4">
               <span className="text-[10px] uppercase tracking-[0.38em] text-gold-400 font-bold block mb-1">
-                MY FATHER'S LEGACY
+                {c.subtitle || "MY FATHER'S LEGACY"}
               </span>
               <h2 className="font-serif text-3.5xl md:text-4xl font-bold tracking-tight mb-2 leading-tight text-white mt-1">
-                Before I found my voice, <br />
-                I heard his.
+                {titleLines.map((line, i) => (
+                  <React.Fragment key={i}>
+                    {line}
+                    {i < titleLines.length - 1 && <><br /></>}
+                  </React.Fragment>
+                ))}
               </h2>
               {/* Squiggle or thin divider */}
               <div className="h-[1px] w-10 bg-gold-500/40 mt-1 mb-3"></div>
             </div>
 
             <p className="text-gray-300 text-sm font-light leading-relaxed mb-4">
-              My father, Saji Ram, was a celebrated music director whose melodies touched countless hearts. He was the creative force behind the famous track from Kireedam, a song that still carries his signature, his soul, and his timeless musical instinct.
+              {c.paragraph1 || "My father, Saji Ram, was a celebrated music director whose melodies touched countless hearts. He was the creative force behind the famous track from Kireedam, a song that still carries his signature, his soul, and his timeless musical instinct."}
             </p>
             
             <p className="text-gray-400 text-xs font-light leading-relaxed mb-6">
-              Walking through recording sessions alongside him taught me the mechanics of composition and the honor of being a musician. His legacy is the foundation upon which I explore new musical frontiers.
+              {c.paragraph2 || "Walking through recording sessions alongside him taught me the mechanics of composition and the honor of being a musician. His legacy is the foundation upon which I explore new musical frontiers."}
             </p>
 
             <div className="relative z-10">

@@ -12,13 +12,11 @@ export default function LegacyHero({ onPlayClick, onExploreClick, content }) {
       {/* Background Image layer */}
       <div className="absolute inset-0 z-0">
         <img
-          src={c.heroImage || "/midhunHero.png"}
+          src={c.heroImage || "/midhunhero1.png"}
           alt="Midhun Saji Ram & Saji Ram Legacy Banner"
           className="w-full h-full object-cover object-[center_35%] filter brightness-95"
         />
-        {/* Light black overlay on mobile, white overlay on desktop */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/55 to-transparent lg:bg-gradient-to-r lg:from-white/95 lg:via-white/20 lg:to-transparent z-10" />
-      </div>
+        <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />      </div>
 
       <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-20 py-4">
         
@@ -32,7 +30,7 @@ export default function LegacyHero({ onPlayClick, onExploreClick, content }) {
             className="flex items-center space-x-2 mb-2.5"
           >
             <span className="h-[1.5px] w-6 bg-gold-500"></span>
-            <span className="text-[10px] md:text-xs uppercase tracking-[0.3em] text-gold-400 lg:text-gold-600 font-bold">
+            <span className="text-[10px] md:text-xs uppercase tracking-[0.3em] text-gold-400 font-bold">
               {c.subtitle || 'The Sound. The Story. The Legacy.'}
             </span>
           </motion.div>
@@ -41,7 +39,7 @@ export default function LegacyHero({ onPlayClick, onExploreClick, content }) {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="font-serif text-white lg:text-charcoal-900 text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.05] mb-4 font-normal"
+            className="font-serif text-white text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.05] mb-4 font-normal"
           >
             {c.titleLine1 || 'A Legacy'}<br />
             {c.titleLine2 || 'He Gave.'}<br />
@@ -55,7 +53,7 @@ export default function LegacyHero({ onPlayClick, onExploreClick, content }) {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-cream-200 lg:text-charcoal-800 text-sm md:text-base max-w-sm mb-6 leading-relaxed font-light"
+            className="text-cream-200 text-sm md:text-base max-w-sm mb-6 leading-relaxed font-light"
           >
             {c.description || 'From the melodies he created to the ones I dream today, this is our journey of music, memories and meaning.'}
           </motion.p>
@@ -69,9 +67,9 @@ export default function LegacyHero({ onPlayClick, onExploreClick, content }) {
             {/* Play button with circle wrapper envelope */}
             <button
               onClick={onPlayClick}
-              className="px-6 py-3 bg-white text-black hover:bg-gold-500 hover:text-black font-semibold text-[10px] uppercase tracking-widest rounded-full transition-all duration-300 flex items-center justify-center space-x-3 cursor-pointer shadow-sm lg:bg-charcoal-900 lg:text-white"
+              className="px-6 py-3 bg-white text-black hover:bg-gold-500 hover:text-black font-semibold text-[10px] uppercase tracking-widest rounded-full transition-all duration-300 flex items-center justify-center space-x-3 cursor-pointer shadow-sm"
             >
-              <div className="w-5 h-5 rounded-full border border-black/10 flex items-center justify-center flex-shrink-0 group-hover:border-black/20 lg:border-white/20">
+              <div className="w-5 h-5 rounded-full border border-black/10 flex items-center justify-center flex-shrink-0 group-hover:border-black/20">
                 <Play size={8} fill="currentColor" className="ml-0.5" />
               </div>
               <span>Listen Now</span>
@@ -79,7 +77,7 @@ export default function LegacyHero({ onPlayClick, onExploreClick, content }) {
             
             <button
               onClick={onExploreClick}
-              className="px-6 py-3 border border-white/30 hover:border-gold-500 hover:bg-gold-500/5 text-white hover:text-gold-400 font-semibold text-[10px] uppercase tracking-widest rounded-full transition-all duration-300 flex items-center justify-center space-x-2 cursor-pointer lg:border-charcoal-900/30 lg:text-charcoal-900 lg:hover:text-gold-600"
+              className="px-6 py-3 border border-white text-white hover:border-gold-500 hover:bg-gold-500/5 hover:text-gold-400 font-semibold text-[10px] uppercase tracking-widest rounded-full transition-all duration-300 flex items-center justify-center cursor-pointer"
             >
               <span>Explore My Works</span>
             </button>

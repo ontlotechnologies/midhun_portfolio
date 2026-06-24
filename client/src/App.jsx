@@ -29,7 +29,7 @@ export default function App() {
   const [timeline, setTimeline] = useState([]);
   const [mediaWorks, setMediaWorks] = useState([]);
   const [worksCategory, setWorksCategory] = useState('audio');
-  const [showPlayer, setShowPlayer] = useState(false);
+  const [showPlayer, setShowPlayer] = useState(true);
   const [selectedWorkId, setSelectedWorkId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [siteContent, setSiteContent] = useState({});
@@ -94,6 +94,72 @@ export default function App() {
     logVisit();
   }, []);
 
+  const getAssetUrl = (url) => {
+    if (!url) return '';
+    if (typeof url !== 'string') return url;
+    if (url.startsWith('/uploads')) {
+      const BASE = import.meta.env.VITE_API_URL 
+        ? import.meta.env.VITE_API_URL.replace('/api', '') 
+        : 'http://localhost:5000';
+      return `${BASE}${url}`;
+    }
+    return url;
+  };
+
+  const normalizeSongs = (songs) => songs.map(s => ({
+    ...s,
+    coverUrl: getAssetUrl(s.coverUrl),
+    audioUrl: getAssetUrl(s.audioUrl)
+  }));
+
+  const normalizeBlogs = (blogs) => blogs.map(b => ({
+    ...b,
+    coverUrl: getAssetUrl(b.coverUrl)
+  }));
+
+  const normalizeGallery = (gallery) => gallery.map(g => ({
+    ...g,
+    url: getAssetUrl(g.url)
+  }));
+
+  const normalizeTimeline = (timeline) => timeline.map(t => ({
+    ...t,
+    image: getAssetUrl(t.image),
+    coverUrl: getAssetUrl(t.coverUrl)
+  }));
+
+  const normalizeMediaWorks = (media) => media.map(m => ({
+    ...m,
+    coverUrl: getAssetUrl(m.coverUrl),
+    videoUrl: getAssetUrl(m.videoUrl),
+    audioUrl: getAssetUrl(m.audioUrl)
+  }));
+
+  const normalizeSiteContent = (content) => {
+    if (!content) return {};
+    const res = { ...content };
+    if (res.hero) {
+      res.hero = { ...res.hero, heroImage: getAssetUrl(res.hero.heroImage) };
+    }
+    if (res.about) {
+      res.about = { ...res.about, portraitImage: getAssetUrl(res.about.portraitImage) };
+    }
+    if (res.father_legacy) {
+      res.father_legacy = { 
+        ...res.father_legacy, 
+        mainImage: getAssetUrl(res.father_legacy.mainImage),
+        polaroidImage: getAssetUrl(res.father_legacy.polaroidImage)
+      };
+    }
+    return res;
+  };
+
+  const handleSongSelect = (song) => {
+    setCurrentSong(song);
+    setShowPlayer(true);
+    setIsPlaying(true);
+  };
+
   // Fetch all public content from the API
   useEffect(() => {
     const fetchData = async () => {
@@ -117,16 +183,17 @@ export default function App() {
           resSiteContent.json()
         ]);
 
-        setSongs(songsData);
-        if (songsData.length > 0) {
-          setCurrentSong(songsData[0]); // default first song
+        const normSongs = normalizeSongs(songsData);
+        setSongs(normSongs);
+        if (normSongs.length > 0) {
+          setCurrentSong(normSongs[0]); // default first song
         }
-        setBlogs(blogsData);
-        setGallery(galleryData);
-        setTimeline(timelineData);
-        setMediaWorks(mediaData);
+        setBlogs(normalizeBlogs(blogsData));
+        setGallery(normalizeGallery(galleryData));
+        setTimeline(normalizeTimeline(timelineData));
+        setMediaWorks(normalizeMediaWorks(mediaData));
         if (siteContentData.success && siteContentData.content) {
-          setSiteContent(siteContentData.content);
+          setSiteContent(normalizeSiteContent(siteContentData.content));
         }
       } catch (error) {
         console.error('API connection failed:', error);
@@ -200,7 +267,7 @@ export default function App() {
                 setWorksCategory={setWorksCategory}
                 currentSong={currentSong}
                 isPlaying={isPlaying}
-                onSongSelect={setCurrentSong}
+                onSongSelect={handleSongSelect}
                 setIsPlaying={setIsPlaying}
                 onWorkClick={(song) => {
                   setSelectedWorkId(song._id);
@@ -220,9 +287,9 @@ export default function App() {
                 onPlayClick={(song) => {
                   if (currentSong && currentSong._id === song._id) {
                     setIsPlaying(!isPlaying);
+                    setShowPlayer(true);
                   } else {
-                    setCurrentSong(song);
-                    setIsPlaying(true);
+                    handleSongSelect(song);
                   }
                 }}
                 currentSong={currentSong}
@@ -247,7 +314,7 @@ export default function App() {
                 timeline={timeline}
                 currentSong={currentSong}
                 isPlaying={isPlaying}
-                onSongSelect={setCurrentSong}
+                onSongSelect={handleSongSelect}
                 setIsPlaying={setIsPlaying}
                 navigate={navigate}
                 onSelectCategory={setWorksCategory}

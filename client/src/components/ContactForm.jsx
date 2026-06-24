@@ -44,7 +44,7 @@ export default function ContactForm() {
           particleCount: 100,
           spread: 70,
           origin: { y: 0.8 },
-          colors: ['#2563eb', '#ffffff', '#1e40af']
+          colors: ['#b89033', '#ffffff', '#e7d7a2']
         });
       } else {
         setStatus({ type: 'error', text: data.message || 'Failed to send message. Please try again.' });

@@ -329,11 +329,11 @@ export default function WorkDetailPage({ song, onBackClick, onPlayClick, current
                 {isCurrentPlaying && (
                   <path
                     d="M0 20 H30 L35 10 L40 30 L45 20 H60 L65 5 L70 35 L75 15 L80 25 L85 20 H110 L115 8 L120 32 L125 12 L130 28 L135 20 H150 L155 10 L160 30 L165 20 H200"
-                    stroke="#2563eb"
+                    stroke="currentColor"
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="animate-pulse"
+                    className="text-gold-500 animate-pulse"
                     strokeDasharray="200"
                     strokeDashoffset="0"
                   />

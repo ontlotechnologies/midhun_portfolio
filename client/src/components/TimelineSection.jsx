@@ -44,7 +44,7 @@ export default function TimelineSection({ timelineData, onActionClick, loading }
               <div className="relative w-full">
                 
                 {/* Horizontal timeline dotted line (visible on desktop lg) */}
-                <div className="hidden lg:block absolute left-8 right-8 h-[1px] border-t border-dashed border-black/20 bottom-[14px] z-0" />
+                <div className="hidden lg:block absolute left-8 right-8 h-[1px] border-t border-dashed border-black/20 bottom-[5px] z-0" />
 
                 {/* Desktop View */}
                 <div className="hidden lg:grid lg:grid-cols-4 gap-4 relative z-10 w-full">
@@ -72,7 +72,7 @@ export default function TimelineSection({ timelineData, onActionClick, loading }
                   {[1, 2, 3, 4].map((idx) => (
                     <div
                       key={idx}
-                      className="relative flex flex-col sm:flex-row gap-4 items-start bg-white border border-cream-300 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.01)]"
+                      className="relative flex flex-col sm:flex-row gap-4 items-start bg-white border border-cream-300 p-4 rounded-xl "
                     >
                       <div className="absolute left-[-30px] top-[24px] w-4 h-4 rounded-full border border-black bg-white flex items-center justify-center z-20">
                         <div className="w-1.5 h-1.5 bg-black rounded-full" />
@@ -178,7 +178,7 @@ export default function TimelineSection({ timelineData, onActionClick, loading }
             <div className="relative w-full">
               
               {/* Horizontal Timeline Dotted Line (visible on desktop lg) */}
-              <div className="hidden lg:block absolute left-8 right-8 h-[1px] border-t border-dashed border-black/20 bottom-[14px] z-0" />
+              <div className="hidden lg:block absolute left-8 right-8 h-[1px] border-t border-dashed border-black/20 bottom-[5px] z-0" />
 
               {/* Desktop View (Visible on lg screens and above) */}
               <div className="hidden lg:grid lg:grid-cols-4 gap-4 relative z-10 w-full">
@@ -193,9 +193,7 @@ export default function TimelineSection({ timelineData, onActionClick, loading }
                       initial={{ opacity: 0, x: slideX, y: 30, rotate: rotateVal }}
                       whileInView={{ opacity: 1, x: 0, y: 0, rotate: 0 }}
                       viewport={{ once: true, amount: 0.05 }}
-                      whileHover={{ 
-                        boxShadow: "0 15px 30px -10px rgba(37, 99, 235, 0.12)"
-                      }}
+                      
                       whileTap={{}}
                       transition={{ 
                         type: "spring",
@@ -207,13 +205,13 @@ export default function TimelineSection({ timelineData, onActionClick, loading }
                       className="flex flex-col items-center group w-full cursor-pointer"
                     >
                       {/* Event Card Container */}
-                      <div className="bg-white border border-cream-300 rounded overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.02)] group-hover:border-gold-500/20 flex-1 flex flex-col w-full">
+                      <div className="bg-white border border-cream-300 rounded overflow-hidden flex-1 flex flex-col w-full">
                         {/* Artwork with Vintage/Sepia filter */}
                         <div className="w-full aspect-[4/3] bg-neutral-100 overflow-hidden">
                           <img 
                             src={eventImg} 
                             alt={event.title} 
-                            className="w-full h-full object-cover filter sepia-[0.35] brightness-[0.92] contrast-[1.05] group-hover:sepia-0 group-hover:brightness-100 group-hover:scale-105 transition-all duration-700"
+                            className="w-full h-full object-cover filter  brightness-[0.92] contrast-[1.05]   transition-all duration-700"
                           />
                         </div>
 
@@ -235,8 +233,8 @@ export default function TimelineSection({ timelineData, onActionClick, loading }
                       <div className="hidden lg:block h-6 w-[1px] border-l border-dashed border-black/20 relative z-10 mt-3"></div>
 
                       {/* Circle node dot (visible on desktop lg) */}
-                      <div className="hidden lg:flex w-2.5 h-2.5 rounded-full border border-black bg-white items-center justify-center relative z-20 group-hover:bg-black transition-colors duration-300 shadow-[0_0_8px_rgba(0,0,0,0.15)]">
-                        <div className="w-1 h-1 bg-black rounded-full group-hover:bg-white transition-colors duration-300" />
+                      <div className="hidden lg:flex w-2.5 h-2.5 rounded-full border border-black bg-white items-center justify-center relative z-20 group-hover:bg-black transition-colors duration-300">
+                        <div className="w-1 h-1 bg-black rounded-full  transition-colors duration-300" />
                       </div>
 
                     </motion.div>
@@ -273,7 +271,7 @@ export default function TimelineSection({ timelineData, onActionClick, loading }
                         whileInView={{ opacity: 1, y: 0, filter: "grayscale(0%) blur(0px)" }}
                         viewport={{ once: false, amount: 0.3 }}
                         transition={{ duration: 0.45 }}
-                        className="relative flex flex-col sm:flex-row gap-4 items-start bg-white border border-cream-300 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.01)] hover:border-gold-500/20 transition-all duration-300"
+                        className="relative flex flex-col sm:flex-row gap-4 items-start bg-white border border-cream-300 p-4 rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.01)]  transition-all duration-300"
                       >
                         {/* Timeline Circle Node Dot */}
                         <div className="absolute left-[-30px] top-[24px] w-4 h-4 rounded-full border border-black bg-white flex items-center justify-center z-20">

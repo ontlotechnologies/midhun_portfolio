@@ -102,7 +102,7 @@ export default function FatherLegacy({ onStoryClick, content }) {
         {[15, 28, 20, 35, 48, 55, 72, 60, 45, 38, 52, 68, 80, 92, 98, 85, 70, 52, 40, 25, 18, 32, 45, 58, 72, 85, 68, 50, 32, 18].map((h, i) => (
           <div 
             key={i} 
-            className="w-[1.5px] bg-[#2563eb] rounded-t-sm"
+            className="w-[1.5px] bg-gold-500 rounded-t-sm"
             style={{ 
               height: `${h * 0.72}px`, 
               opacity: 0.15 + (i % 4) * 0.15 

@@ -180,7 +180,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
         layout: { type: 'spring', damping: 26, stiffness: 170 },
         y: { type: 'spring', damping: 26, stiffness: 170 }
       }}
-      className={`fixed z-45 bg-[#0a0f1d]/60 backdrop-blur-[32px] saturate-[1.5] border border-white/10 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden ${
+      className={`fixed z-45 bg-[#0a0f1d]/60 backdrop-blur-[32px] saturate-[1.5] border border-white/10 text-white shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden font-outfit ${
         isMinimized 
           ? 'bottom-6 right-6 cursor-pointer flex items-center justify-center group'
           : 'bottom-4 md:bottom-6 left-0 right-0 mx-auto'
@@ -292,13 +292,13 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
                 </div>
 
                 <div className="pl-5 z-20 text-left">
-                  <span className="text-[9px] tracking-[0.25em] font-sans font-bold text-gold-500/80 uppercase block mb-0.5">
+                  <span className="text-[9px] tracking-[0.25em] font-bold text-gold-500/80 uppercase block mb-0.5">
                     {displaySong.category}
                   </span>
-                  <h4 className="font-serif text-lg font-bold text-gold-100 leading-tight">
+                  <h4 className="text-lg font-bold text-gold-100 leading-tight">
                     {displaySong.title}
                   </h4>
-                  <p className="text-[8.5px] font-sans tracking-widest text-gray-400 mt-1 uppercase font-bold">
+                  <p className="text-[8.5px] tracking-widest text-gray-400 mt-1 uppercase font-bold">
                     Midhun Saji Ram
                   </p>
                 </div>
@@ -307,7 +307,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
               {/* Middle Column: Song Insights (Hidden on Mobile for screen space) */}
               <div className="hidden md:flex text-left px-5 flex-col justify-center border-l border-white/5 h-16">
                 <span className="text-[8px] uppercase tracking-widest text-gray-500 font-bold block mb-1">Creative Insights</span>
-                <p className="text-xs text-gray-300 italic font-serif leading-relaxed max-w-md font-light line-clamp-2">
+                <p className="text-xs text-gray-300 italic leading-relaxed max-w-md font-light line-clamp-2">
                   "{displaySong.description || 'A timeless melody carrying forward the legacy of sound.'}"
                 </p>
               </div>
@@ -361,7 +361,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
             </div>
             
             <div className="overflow-hidden text-left ml-3.5">
-              <h4 className="font-serif text-sm font-semibold truncate text-gold-100">
+              <h4 className="text-sm font-semibold truncate text-gold-100">
                 {displaySong.title}
               </h4>
               <p className="text-[9px] text-gray-400 uppercase tracking-widest truncate mt-0.5 font-bold">
@@ -455,7 +455,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
                 }}
                 className="w-16 h-1 bg-neutral-800 accent-gold-500 rounded-full cursor-pointer opacity-40 group-hover/vol:opacity-100 transition-opacity"
                 style={{
-                  background: `linear-gradient(to right, #2563eb ${(isMuted ? 0 : volume) * 100}%, #262626 ${(isMuted ? 0 : volume) * 100}%)`
+                  background: `linear-gradient(to right, var(--color-gold-500) ${(isMuted ? 0 : volume) * 100}%, #262626 ${(isMuted ? 0 : volume) * 100}%)`
                 }}
               />
             </div>

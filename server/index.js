@@ -36,9 +36,6 @@ mongoose.connect(MONGO_URI, {
 })
 .then(() => {
   console.log('MongoDB connection established successfully.');
-  
-  // Seed default admin and content if database is empty
-  require('./seed')();
 })
 .catch((err) => {
   console.error('Fatal Error: Failed to connect to MongoDB:', err.message);

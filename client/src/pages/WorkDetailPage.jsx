@@ -198,8 +198,7 @@ export default function WorkDetailPage({ song, onBackClick, onPlayClick, current
             <div className="bg-white border border-cream-300 p-4 rounded flex items-center justify-between shadow-sm mb-6">
               <button
                 onClick={() => onPlayClick(song)}
-                disabled={isCurrentLoading}
-                className="w-11 h-11 rounded bg-gold-500 hover:bg-gold-600 disabled:bg-gold-500/80 text-white flex items-center justify-center transition-all duration-300 shadow-md cursor-pointer flex-shrink-0"
+                className="w-11 h-11 rounded bg-gold-500 hover:bg-gold-600 text-white flex items-center justify-center transition-all duration-300 shadow-md cursor-pointer flex-shrink-0"
               >
                 {isCurrentLoading ? (
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>

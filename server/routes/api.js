@@ -281,6 +281,21 @@ router.delete('/blogs/:id', authMiddleware, async (req, res) => {
   }
 });
 
+// Increment blog views count
+router.post('/blogs/:id/view', async (req, res) => {
+  try {
+    const blog = await Blog.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { views: 1 } },
+      { new: true }
+    );
+    if (!blog) return res.status(404).json({ success: false, message: 'Blog post not found' });
+    res.json({ success: true, views: blog.views });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to increment view count', error: error.message });
+  }
+});
+
 
 /* =========================================================================
    GALLERY ROUTES

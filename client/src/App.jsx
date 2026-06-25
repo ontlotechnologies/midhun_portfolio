@@ -9,6 +9,7 @@ import BlogPage from './pages/BlogPage';
 import GalleryPage from './pages/GalleryPage';
 import ContactPage from './pages/ContactPage';
 import WorkDetailPage from './pages/WorkDetailPage';
+import BlogDetailPage from './pages/BlogDetailPage';
 import CustomCursor from './components/CustomCursor';
 import { Disc, Sparkles } from 'lucide-react';
 import Lenis from 'lenis';
@@ -301,7 +302,18 @@ export default function App() {
               />
             );
           case '/blog':
-            return <BlogPage blogs={blogs} loading={loading} />;
+            return <BlogPage blogs={blogs} loading={loading} navigate={navigate} />;
+          case '/blog-detail':
+            const blogQueryParams = new URLSearchParams(window.location.search);
+            const blogId = blogQueryParams.get('id');
+            const detailedBlog = blogs.find(b => b._id === blogId);
+            return (
+              <BlogDetailPage 
+                blog={detailedBlog} 
+                onBackClick={() => navigate('/blog')}
+                loading={loading}
+              />
+            );
           case '/gallery':
             return <GalleryPage gallery={gallery} loading={loading} />;
           case '/contact':

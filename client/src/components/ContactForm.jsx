@@ -69,7 +69,7 @@ export default function ContactForm() {
                   Get In Touch
                 </span>
                 <h2 className="font-outfit text-3xl md:text-4xl font-black tracking-tight text-charcoal-900 leading-tight">
-                  Let's Create <br />
+                  Let's Connect <br />
                   <span className="text-gold-gradient italic font-normal">Something Beautiful.</span>
                 </h2>
               </div>

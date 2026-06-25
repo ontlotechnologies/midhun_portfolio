@@ -50,10 +50,10 @@ export default function Navbar({ activeSection, setActiveSection, currentPath, n
             }
           }}
         >
-          <span className="font-script text-3.5xl md:text-4xl text-white group-hover:text-gold-600 transition-colors duration-300 leading-[0.8] tracking-normal select-none">
+          <span className="font-script text-3.5xl md:text-4xl text-gold-400 group-hover:text-gold-600 transition-colors duration-300 leading-[0.8] tracking-normal select-none">
             Midhun Saji Ram
           </span>
-          <span className="text-[7.5px] md:text-[8.5px] tracking-[0.38em] text-gray-500 uppercase font-bold mt-1.5 leading-none">
+          <span className="text-[7.5px] md:text-[8.5px] tracking-[0.38em] text-white uppercase font-bold mt-1.5 leading-none">
             Music Director | Singer
           </span>
         </div>
@@ -67,7 +67,7 @@ export default function Navbar({ activeSection, setActiveSection, currentPath, n
               <button
                 key={link.id}
                 onClick={() => handleNavClick(link)}
-                className={`text-[10px] uppercase tracking-widest transition-colors duration-300 font-bold relative py-1 group ${isCurrent ? 'text-gold-400' : 'text-gold-400 hover:text-white'}`}
+                className={`text-[10px] uppercase tracking-widest transition-colors duration-300 font-bold relative py-1 group ${isCurrent ? 'text-gold-400' : 'text-gold-400 hover:text-gold-300'}`}
               >
                 {link.label}
                 <span className={`absolute bottom-0 left-0 w-full h-[1.5px] bg-charcoal-900 transition-transform duration-300 ${isCurrent ? 'scale-x-100' : 'scale-x-0 origin-right group-hover:scale-x-100 group-hover:origin-left'}`}></span>

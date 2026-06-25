@@ -136,11 +136,7 @@ export default function AboutSection({ onActionClick, content }) {
                   className="w-full h-full object-cover filter brightness-[0.96] contrast-[1.01] transition-transform duration-700 hover:scale-103"
                 />
 
-                {/* Floating badge inside image */}
-                <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md px-3.5 py-1.5 border border-cream-300/80 rounded shadow-sm text-[8px] uppercase tracking-[0.2em] font-bold text-charcoal-900 z-20 flex items-center gap-1.5 select-none">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gold-500 animate-ping"></span>
-                  <span>Artist & Composer</span>
-                </div>
+               
               </motion.div>
 
             </div>

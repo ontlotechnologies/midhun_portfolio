@@ -349,6 +349,7 @@ export default function Home({
               setIsPlaying={setIsPlaying}
               onWorkClick={onWorkClick}
               loading={loading}
+              isAudioLoading={isAudioLoading}
             />
           </ScrollReveal>
         )}
@@ -438,7 +439,11 @@ export default function Home({
 
       {/* 7. Blog Stories */}
       <ScrollReveal>
-        <BlogSection blogs={blogs} loading={loading} />
+        <BlogSection 
+          blogs={blogs} 
+          loading={loading} 
+          onBlogClick={(blog) => navigate(`/blog-detail?id=${blog._id}`)} 
+        />
       </ScrollReveal>
 
       <hr className="border-t border-cream-300/60 mx-auto max-w-7xl" />

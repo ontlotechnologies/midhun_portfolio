@@ -154,7 +154,6 @@ export default function WorksShowcase({
                           {/* Compact Play/Pause Music Icon Button next to title */}
                           <button
                             onClick={(e) => handlePlayToggle(e, song)}
-                            disabled={isCurrentLoading}
                             className={`w-5.5 h-5.5 rounded flex items-center justify-center transition-all duration-300 flex-shrink-0 cursor-pointer border ${
                               isCurrentPlaying
                                 ? 'bg-gold-500 border-gold-500 text-charcoal-900 shadow-sm'

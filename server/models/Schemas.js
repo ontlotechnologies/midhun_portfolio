@@ -22,7 +22,8 @@ const BlogSchema = new mongoose.Schema({
   coverUrl: { type: String, default: '' },
   category: { type: String, default: 'Reflection' }, // e.g., Reflection, BTS, Legacy
   isPublished: { type: Boolean, default: true },
-  readingTime: { type: String, default: '3 mins' }
+  readingTime: { type: String, default: '3 mins' },
+  views: { type: Number, default: 0 }
 }, { timestamps: true });
 
 // Gallery Schema

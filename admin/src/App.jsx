@@ -4,7 +4,7 @@ import {
   LogIn, LogOut, Disc, FileText, Image, Calendar, Mail, BarChart3,
   Plus, Trash2, CheckCircle2, Lock, Settings, Play, Pause,
   Users, Award, Video, Film, MessageSquare, Search, Bell, ChevronDown, Heart, Sparkles, Save, ChevronRight, X, Edit, Tv, Clapperboard, Music,
-  Menu, Upload, Clock, Volume2, VolumeX, ChevronUp
+  Menu, Upload, Clock, Volume2, VolumeX, ChevronUp, Eye
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -142,14 +142,7 @@ export default function App() {
     weeklyVisits: []
   });
 
-  const [storageStats, setStorageStats] = useState({
-    totalBytes: 0,
-    audioBytes: 0,
-    videoBytes: 0,
-    imageBytes: 0,
-    otherBytes: 0,
-    limitBytes: 100 * 1024 * 1024
-  });
+
 
   const [streamPeriod, setStreamPeriod] = useState('This Week');
 
@@ -167,6 +160,7 @@ export default function App() {
   const [galleryForm, setGalleryForm] = useState({ title: '', url: '', type: 'image', category: 'Concerts', isFeatured: false });
   const [timelineForm, setTimelineForm] = useState({ year: '', title: '', description: '', image: '' });
   const [editingTimelineId, setEditingTimelineId] = useState(null);
+  const [editingBlogId, setEditingBlogId] = useState(null);
   const [mediaWorkForm, setMediaWorkForm] = useState({
     title: '',
     type: 'short_film',
@@ -331,19 +325,7 @@ export default function App() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const loadStorageStats = async () => {
-    try {
-      const res = await fetch(`${API_URL}/storage-stats`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success && data.storage) {
-        setStorageStats(data.storage);
-      }
-    } catch (err) {
-      console.error('Failed to load storage stats:', err);
-    }
-  };
+
 
   const loadStats = async () => {
     try {
@@ -394,9 +376,8 @@ export default function App() {
         setMessages(await resMessages.json());
       }
 
-      // Automatically sync stats and storage allocations in real-time
+      // Automatically sync stats in real-time
       loadStats();
-      loadStorageStats();
     } catch (err) {
       console.error('Failed to load data:', err);
     }
@@ -594,6 +575,7 @@ export default function App() {
 
   const handleAddSong = async (e) => {
     e.preventDefault();
+    setContentSaving(true);
     try {
       let coverUrl = await uploadIfNeeded(songForm.coverUrl);
       const audioUrl = await uploadIfNeeded(songForm.audioUrl);
@@ -627,6 +609,8 @@ export default function App() {
     } catch (err) {
       console.error(err);
       alert(err.message || 'Failed to connect to the server.');
+    } finally {
+      setContentSaving(false);
     }
   };
 
@@ -696,6 +680,7 @@ export default function App() {
 
   const handleAddMediaWork = async (e) => {
     e.preventDefault();
+    setContentSaving(true);
     try {
       const coverUrl = await uploadIfNeeded(mediaWorkForm.coverUrl);
       const videoUrl = await uploadIfNeeded(mediaWorkForm.videoUrl);
@@ -743,6 +728,8 @@ export default function App() {
     } catch (err) {
       console.error(err);
       alert(err.message || 'Failed to connect to the server.');
+    } finally {
+      setContentSaving(false);
     }
   };
 
@@ -769,12 +756,17 @@ export default function App() {
 
   const handleAddBlog = async (e) => {
     e.preventDefault();
+    setContentSaving(true);
     try {
       const coverUrl = await uploadIfNeeded(blogForm.coverUrl);
       const blogData = { ...blogForm, coverUrl };
 
-      const res = await fetch(`${API_URL}/blogs`, {
-        method: 'POST',
+      const isEditing = !!editingBlogId;
+      const url = isEditing ? `${API_URL}/blogs/${editingBlogId}` : `${API_URL}/blogs`;
+      const method = isEditing ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -783,17 +775,50 @@ export default function App() {
       });
       if (res.ok) {
         setBlogForm({ title: '', category: 'Reflection', coverUrl: '', excerpt: '', content: '', readingTime: '4 mins', isPublished: true });
+        setEditingBlogId(null);
         setBlogViewMode('list');
         loadData();
         confetti({ particleCount: 50, colors: ['#b89033', '#cca647', '#ffffff'] });
       } else {
         const data = await res.json();
-        alert(data.message || 'Failed to add blog post.');
+        alert(data.message || `Failed to ${isEditing ? 'update' : 'add'} blog post.`);
       }
     } catch (err) {
       console.error(err);
       alert(err.message || 'Failed to connect to the server.');
+    } finally {
+      setContentSaving(false);
     }
+  };
+
+  const handleEditBlog = (blog) => {
+    setEditingBlogId(blog._id);
+    setBlogForm({
+      title: blog.title || '',
+      category: blog.category || 'Reflection',
+      coverUrl: blog.coverUrl || '',
+      excerpt: blog.excerpt || '',
+      content: blog.content || '',
+      readingTime: blog.readingTime || '3 mins',
+      isPublished: blog.isPublished !== undefined ? blog.isPublished : true
+    });
+    setBlogPreviewMode(false);
+    setBlogViewMode('add');
+  };
+
+  const handlePreviewBlog = (blog) => {
+    setEditingBlogId(blog._id);
+    setBlogForm({
+      title: blog.title || '',
+      category: blog.category || 'Reflection',
+      coverUrl: blog.coverUrl || '',
+      excerpt: blog.excerpt || '',
+      content: blog.content || '',
+      readingTime: blog.readingTime || '3 mins',
+      isPublished: blog.isPublished !== undefined ? blog.isPublished : true
+    });
+    setBlogPreviewMode(true);
+    setBlogViewMode('add');
   };
 
   const handleDeleteBlog = async (id) => {
@@ -817,9 +842,29 @@ export default function App() {
 
   const handleAddGalleryItem = async (e) => {
     e.preventDefault();
+    setContentSaving(true);
     try {
+      if (!galleryForm.url) {
+        alert('Please upload an image file or enter an image URL.');
+        setContentSaving(false);
+        return;
+      }
+      
       const url = await uploadIfNeeded(galleryForm.url);
-      const galleryData = { ...galleryForm, url };
+      
+      // Auto-generate title from filename or category + date
+      let generatedTitle = '';
+      if (galleryForm.url && typeof galleryForm.url === 'object' && galleryForm.url.name) {
+        const nameWithoutExt = galleryForm.url.name.substring(0, galleryForm.url.name.lastIndexOf('.')) || galleryForm.url.name;
+        generatedTitle = nameWithoutExt.replace(/[-_]/g, ' ');
+      } else {
+        generatedTitle = `${galleryForm.category} Photo - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      }
+      
+      // Capitalize first letter of each word
+      generatedTitle = generatedTitle.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+      const galleryData = { ...galleryForm, title: generatedTitle, url };
 
       const res = await fetch(`${API_URL}/gallery`, {
         method: 'POST',
@@ -841,6 +886,8 @@ export default function App() {
     } catch (err) {
       console.error(err);
       alert(err.message || 'Failed to connect to the server.');
+    } finally {
+      setContentSaving(false);
     }
   };
 
@@ -1055,8 +1102,6 @@ export default function App() {
      ========================================================================= */
 
   const streamData = getStreamPlaysData();
-  const usedPercent = Math.min(100, Math.round((storageStats.totalBytes / storageStats.limitBytes) * 100)) || 0;
-  const strokeOffset = 263.89 - (263.89 * usedPercent / 100);
 
   return (
     <div className="min-h-screen bg-obsidian-950 text-obsidian-200 flex overflow-hidden font-sans">
@@ -1363,49 +1408,43 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Circular donut chart and Storage counts */}
-                <div className="lg:col-span-4 bg-obsidian-900 border border-obsidian-700/50 p-6 rounded-xl shadow-md flex flex-col justify-between">
-                  <h3 className="text-xs uppercase tracking-widest text-obsidian-100 font-black font-mono">Storage Allocation</h3>
-
-                  <div className="flex justify-center items-center relative py-4">
-                    {/* SVG circle donut */}
-                    <svg className="w-28 h-28 transform -rotate-90">
-                      <circle cx="56" cy="56" r="42" stroke="#090d16" strokeWidth="10" fill="transparent" />
-                      <circle
-                        cx="56"
-                        cy="56"
-                        r="42"
-                        stroke="var(--color-gold-500)"
-                        strokeWidth="10"
-                        fill="transparent"
-                        strokeDasharray="263.89"
-                        strokeDashoffset={strokeOffset}
-                      />
-                    </svg>
-                    <div className="absolute flex flex-col items-center justify-center select-none">
-                      <span className="text-xl font-bold text-black font-mono">{usedPercent}%</span>
-                      <span className="text-[7px] uppercase tracking-widest text-slate-500 font-bold font-mono">Space Used</span>
+                {/* Blog Views analytics card */}
+                <div className="lg:col-span-4 bg-obsidian-900 border border-obsidian-700/50 p-6 rounded-xl shadow-md flex flex-col justify-between text-left">
+                  <div>
+                    <h3 className="text-xs uppercase tracking-widest text-obsidian-100 font-black font-mono">Popular Articles</h3>
+                    <p className="text-[9.5px] text-slate-400 mt-0.5 mb-4">Top stories ranked by view metrics</p>
+                    
+                    <div className="space-y-3.5 max-h-[170px] overflow-y-auto pr-1">
+                      {blogs.length === 0 ? (
+                        <p className="text-slate-500 italic text-[10.5px]">No blog posts published yet.</p>
+                      ) : (
+                        blogs
+                          .slice()
+                          .sort((a, b) => (b.views || 0) - (a.views || 0))
+                          .slice(0, 4)
+                          .map((blog, idx) => (
+                            <div key={blog._id} className="flex justify-between items-center text-[10.5px]">
+                              <div className="flex items-center space-x-2 min-w-0">
+                                <span className="w-4 h-4 bg-gold-500/10 text-gold-500 font-bold font-mono text-[8px] flex items-center justify-center rounded">
+                                  {idx + 1}
+                                </span>
+                                <span className="text-slate-300 font-medium truncate max-w-[130px]">{blog.title}</span>
+                              </div>
+                              <span className="font-mono text-white font-semibold shrink-0">
+                                {blog.views || 0} <span className="text-slate-500 text-[8.5px]">views</span>
+                              </span>
+                            </div>
+                          ))
+                      )}
                     </div>
                   </div>
-
-                  {/* List breakdown */}
-                  <div className="space-y-1.5 mt-3 text-[10px]">
-                    {[
-                      { label: 'Images Assets', size: formatBytes(storageStats.imageBytes), color: 'bg-gold-500' },
-                      { label: 'Audio Tracks', size: formatBytes(storageStats.audioBytes), color: 'bg-blue-800' },
-                      { label: 'Video Clips', size: formatBytes(storageStats.videoBytes), color: 'bg-red-600' },
-                      { label: 'Other Uploads', size: formatBytes(storageStats.otherBytes), color: 'bg-purple-600' }
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center text-slate-400">
-                        <div className="flex items-center space-x-2">
-                          <span className={`w-1.5 h-1.5 rounded-full ${item.color}`} />
-                          <span>{item.label}</span>
-                        </div>
-                        <span className="font-mono text-white font-semibold">{item.size}</span>
-                      </div>
-                    ))}
+                  
+                  <div className="border-t border-obsidian-800 pt-3 mt-4 flex justify-between items-center text-[10.5px]">
+                    <span className="text-slate-400 uppercase tracking-widest text-[8.5px] font-bold">Total Blog Views</span>
+                    <span className="font-mono font-bold text-gold-500 text-sm">
+                      {blogs.reduce((acc, curr) => acc + (curr.views || 0), 0)}
+                    </span>
                   </div>
-
                 </div>
 
               </div>
@@ -1681,9 +1720,11 @@ export default function App() {
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98]"
+                      disabled={contentSaving}
+                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 disabled:opacity-50 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98] flex items-center space-x-1"
                     >
-                      Save Release
+                      {contentSaving && <span className="animate-spin mr-1">⌛</span>}
+                      <span>{contentSaving ? 'Uploading...' : 'Save Release'}</span>
                     </button>
                   </div>
                 </form>
@@ -1976,9 +2017,11 @@ export default function App() {
                       </button>
                       <button
                         type="submit"
-                        className="px-5 py-2 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98]"
+                        disabled={contentSaving}
+                        className="px-5 py-2 bg-gold-500 hover:bg-gold-600 disabled:opacity-50 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98] flex items-center space-x-1"
                       >
-                        Save Release
+                        {contentSaving && <span className="animate-spin mr-1">⌛</span>}
+                        <span>{contentSaving ? 'Uploading...' : 'Save Release'}</span>
                       </button>
                     </div>
                   </form>
@@ -2056,17 +2099,7 @@ export default function App() {
                     </h3>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField label="Photo Title Label">
-                      <Input
-                        type="text"
-                        required
-                        placeholder="e.g. Cochin Arena Stage Shoot"
-                        value={galleryForm.title}
-                        onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })}
-                      />
-                    </FormField>
-
+                  <div className="grid grid-cols-1 gap-4">
                     <FormField label="Gallery Category">
                       <Select
                         value={galleryForm.category}
@@ -2105,9 +2138,11 @@ export default function App() {
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98]"
+                      disabled={contentSaving}
+                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 disabled:opacity-50 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98] flex items-center space-x-1"
                     >
-                      Upload Picture
+                      {contentSaving && <span className="animate-spin mr-1">⌛</span>}
+                      <span>{contentSaving ? 'Uploading...' : 'Upload Picture'}</span>
                     </button>
                   </div>
                 </form>
@@ -2347,17 +2382,39 @@ export default function App() {
                         <div className="text-left min-w-0">
                           <h5 className="font-serif text-sm font-bold text-obsidian-100 truncate leading-snug">{blog.title}</h5>
                           <div className="flex items-center space-x-2.5 text-[8.5px] uppercase tracking-wider text-slate-500 font-bold mt-1.5 font-mono">
-                            <span className="text-gold-500 bg-gold-500/5 border border-gold-500/10 px-2 py-0.5 rounded-md">{blog.category}</span>
-                            <span>&bull;</span>
                             <span className="flex items-center gap-1"><Clock size={10} /> {blog.readingTime}</span>
+                            <span>&bull;</span>
+                            <span className="flex items-center gap-1 text-slate-400 font-mono">
+                              <Eye size={10} className="text-gold-500" /> {blog.views || 0} views
+                            </span>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleDeleteBlog(blog._id)}
-                          className="text-slate-400 hover:text-red-500 p-2.5 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer shrink-0"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        <div className="flex items-center space-x-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handlePreviewBlog(blog)}
+                            className="text-slate-400 hover:text-gold-500 p-2 hover:bg-gold-500/10 rounded-lg transition-colors cursor-pointer"
+                            title="Preview Article"
+                          >
+                            <Eye size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEditBlog(blog)}
+                            className="text-slate-400 hover:text-blue-500 p-2 hover:bg-blue-500/10 rounded-lg transition-colors cursor-pointer"
+                            title="Edit Article"
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteBlog(blog._id)}
+                            className="text-slate-400 hover:text-red-500 p-2 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
+                            title="Delete Article"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                     {blogs.length === 0 && (
@@ -2395,7 +2452,6 @@ export default function App() {
                         <img src={getPreviewUrl(blogForm.coverUrl)} className="w-full h-44 object-cover rounded-lg mb-4 border border-obsidian-750 shadow-md" alt="" />
                       )}
                       <div className="flex items-center gap-2 mb-2 font-mono">
-                        <span className="bg-gold-500/10 text-gold-500 px-2 py-0.5 text-[8px] uppercase tracking-widest font-black rounded">{blogForm.category}</span>
                         <span className="text-[9px] text-slate-500 font-bold flex items-center gap-1"><Clock size={10} /> {blogForm.readingTime}</span>
                       </div>
                       <h2 className="font-serif text-lg font-bold text-obsidian-100 mb-2 leading-tight">{blogForm.title || 'Untitled Article'}</h2>
@@ -2407,29 +2463,15 @@ export default function App() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="sm:col-span-2">
-                          <FormField label="Article Headline Title">
-                            <Input
-                              type="text"
-                              required
-                              placeholder="e.g. Behind the Score of Letters Unheard"
-                              value={blogForm.title}
-                              onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })}
-                            />
-                          </FormField>
-                        </div>
-                        <FormField label="Blog Category">
-                          <Select
-                            value={blogForm.category}
-                            onChange={(e) => setBlogForm({ ...blogForm, category: e.target.value })}
-                          >
-                            <option value="Reflection">Reflection Note</option>
-                            <option value="BTS">Behind The Scenes</option>
-                            <option value="Legacy">Father's Legacy</option>
-                          </Select>
-                        </FormField>
-                      </div>
+                      <FormField label="Article Headline Title">
+                        <Input
+                          type="text"
+                          required
+                          placeholder="e.g. Behind the Score of Letters Unheard"
+                          value={blogForm.title}
+                          onChange={(e) => setBlogForm({ ...blogForm, title: e.target.value })}
+                        />
+                      </FormField>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField label="Banner Cover Photo URL">
@@ -2476,16 +2518,22 @@ export default function App() {
                   <div className="flex justify-end space-x-3 pt-3">
                     <button
                       type="button"
-                      onClick={() => setBlogViewMode('list')}
+                      onClick={() => {
+                        setBlogViewMode('list');
+                        setEditingBlogId(null);
+                        setBlogForm({ title: '', category: 'Reflection', coverUrl: '', excerpt: '', content: '', readingTime: '4 mins', isPublished: true });
+                      }}
                       className="px-4 py-2 bg-obsidian-950 border border-obsidian-700 text-obsidian-500 hover:text-obsidian-100 text-[10.5px] font-bold uppercase tracking-widest rounded-lg cursor-pointer transition-all"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98]"
+                      disabled={contentSaving}
+                      className="px-5 py-2 bg-gold-500 hover:bg-gold-600 disabled:opacity-50 text-white font-bold text-[10.5px] uppercase tracking-widest rounded-lg cursor-pointer transition-all active:scale-[0.98] flex items-center space-x-1"
                     >
-                      Publish Story
+                      {contentSaving && <span className="animate-spin mr-1">⌛</span>}
+                      <span>{contentSaving ? 'Saving...' : (editingBlogId ? 'Save Changes' : 'Publish Story')}</span>
                     </button>
                   </div>
                 </form>

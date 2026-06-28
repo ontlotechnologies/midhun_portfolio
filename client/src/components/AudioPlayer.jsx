@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, Maximize2, Minimize2, Disc, ExternalLink, X, Music } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Disc, Maximize2, Minimize2, Music, Pause, Play, SkipBack, SkipForward, Volume2, VolumeX, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { FaSpotify, FaYoutube } from 'react-icons/fa';
-import { motion, AnimatePresence } from 'framer-motion';
 import ShinyText from './ShinyText';
 
 const getYoutubeId = (url) => {
   if (!url) return '';
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const regExp = /^(?:.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=))([^#&?]{11}).*/;
   const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : '';
+  return (match && match[1] && match[1].length === 11) ? match[1] : '';
 };
 
 const isYoutube = (url) => {
@@ -24,6 +24,9 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1024
+  );
 
   const [isYtReady, setIsYtReady] = useState(false);
   const ytPlayerRef = useRef(null);
@@ -44,6 +47,13 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
 
   const playRequestIdRef = useRef(0);
 
+  const stopPlaybackAnimation = () => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+  };
+
   const isYoutubeAudio = isYoutube(currentSong?.audioUrl) || (!currentSong?.audioUrl && isYoutube(currentSong?.youtubeUrl));
   const ytId = isYoutube(currentSong?.audioUrl)
     ? getYoutubeId(currentSong?.audioUrl)
@@ -52,7 +62,9 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
   // Monitor screen resize for responsive triggers
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      const width = window.innerWidth;
+      setViewportWidth(width);
+      setIsMobile(width < 768);
     };
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -120,7 +132,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
                 setIsPlaying(false);
                 setIsLoading(false);
               }
-              cancelAnimationFrame(animationRef.current);
+              stopPlaybackAnimation();
             } else if (event.data === window.YT.PlayerState.ENDED) {
               if (isYoutubeAudioRef.current) {
                 setIsPlaying(false);
@@ -129,7 +141,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
                   handleNextRef.current();
                 }
               }
-              cancelAnimationFrame(animationRef.current);
+              stopPlaybackAnimation();
             } else if (event.data === window.YT.PlayerState.CUED) {
               if (isYoutubeAudioRef.current) {
                 setIsLoading(false);
@@ -262,6 +274,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
     audio.addEventListener('error', onError);
 
     return () => {
+      stopPlaybackAnimation();
       audio.pause();
       audio.removeEventListener('loadedmetadata', onLoadedMetadata);
       audio.removeEventListener('timeupdate', onTimeUpdate);
@@ -287,6 +300,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
       const isNewSource = normalizedCurrentSrc !== normalizedTargetSrc;
 
       if (isNewSource) {
+        stopPlaybackAnimation();
         audioRef.current.pause();
         audioRef.current.src = currentSong.audioUrl;
         audioRef.current.load();
@@ -319,13 +333,13 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
           });
       } else {
         audioRef.current.pause();
-        cancelAnimationFrame(animationRef.current);
+        stopPlaybackAnimation();
       }
     } else {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      cancelAnimationFrame(animationRef.current);
+      stopPlaybackAnimation();
     }
   }, [currentSong, isPlaying, isYoutubeAudio]);
 
@@ -356,7 +370,9 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
 
   const handlePlayPause = () => {
     if (!currentSong && songs && songs.length > 0) {
-      onSongSelect(songs[0]);
+      if (typeof onSongSelect === 'function') {
+        onSongSelect(songs[0]);
+      }
       setIsPlaying(true);
       return;
     }
@@ -428,26 +444,55 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
   if (!songs || songs.length === 0) return null;
 
   const displaySong = currentSong || songs[0];
+  const openWidth = Math.min(viewportWidth * 0.95, 1024);
+  const openHeight = isExpanded ? (isMobile ? 'auto' : 220) : 80;
+  const openBottom = isMobile ? 16 : 24;
+  const minimizedSize = 48;
+  const minimizedRight = 24;
 
   return (
     <motion.div
       layout
-      initial={{ y: 150 }}
-      animate={{ y: 0 }}
-      exit={{ y: 150 }}
-      transition={{
-        layout: { type: 'spring', damping: 26, stiffness: 170 },
-        y: { type: 'spring', damping: 26, stiffness: 170 }
+      initial={{
+        y: 18,
+        opacity: 0,
+        scale: 0.98,
+        width: openWidth,
+        height: 64,
+        x: -openWidth / 2,
+        bottom: openBottom,
+        borderRadius: 28
       }}
-      className={`fixed z-45 glass-audio-player overflow-hidden font-outfit ${isMinimized
-          ? 'bottom-6 right-6 cursor-pointer flex items-center justify-center group'
-          : 'bottom-4 md:bottom-6 left-0 right-0 mx-auto'
-        }`}
+      animate={{
+        y: 0,
+        opacity: 1,
+        scale: 1,
+        width: isMinimized ? minimizedSize : openWidth,
+        height: isMinimized ? minimizedSize : openHeight,
+        x: isMinimized
+          ? (viewportWidth / 2) - minimizedRight - minimizedSize
+          : -openWidth / 2,
+        bottom: isMinimized ? 24 : openBottom,
+        borderRadius: isMinimized ? 24 : 32
+      }}
+      exit={{
+        y: 18,
+        opacity: 0,
+        scale: 0.98,
+        height: isMinimized ? minimizedSize : 64
+      }}
+      transition={{
+        type: 'spring',
+        stiffness: 210,
+        damping: 28,
+        mass: 0.75
+      }}
+      className={`fixed left-1/2 z-45 glass-audio-player overflow-hidden font-outfit ${isMinimized
+        ? 'cursor-pointer flex items-center justify-center group'
+        : ''
+      }`}
       style={{
-        width: isMinimized ? 48 : '95%',
-        height: isMinimized ? 48 : (isExpanded ? (isMobile ? 'auto' : 220) : 80),
-        borderRadius: isMinimized ? 24 : 32,
-        maxWidth: isMinimized ? 48 : 1024
+        transformOrigin: isMinimized ? 'center center' : 'center bottom'
       }}
       onClick={() => {
         if (isMinimized) setIsMinimized(false);
@@ -460,7 +505,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.5 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.12, ease: 'easeOut' }}
             className="flex items-center justify-center text-gold-500 w-full h-full relative"
           >
             <Music size={18} className="group-hover:scale-110 transition-transform duration-300" />
@@ -474,7 +519,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.12, ease: 'easeOut' }}
             className="w-full h-full flex flex-col relative"
           >
 
@@ -505,7 +550,7 @@ export default function AudioPlayer({ currentSong, songs, onSongSelect, isPlayin
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
                     className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 items-center pt-4 pb-4 border-b border-white/5 md:border-b-0"
                   >
                     {/* Left Column: Vinyl Sleeve & Disc */}

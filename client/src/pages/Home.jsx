@@ -1,23 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import LegacyHero from '../components/LegacyHero';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import AboutSection from '../components/AboutSection';
-import FatherLegacy from '../components/FatherLegacy';
-import TimelineSection from '../components/TimelineSection';
-import WorksShowcase from '../components/WorksShowcase';
-import GallerySection from '../components/GallerySection';
 import BlogSection from '../components/BlogSection';
 import ContactForm from '../components/ContactForm';
-import ScrollReveal from '../components/ScrollReveal';
 import FaqRiderSection from '../components/FaqRiderSection';
+import FatherLegacy from '../components/FatherLegacy';
+import GallerySection from '../components/GallerySection';
+import LegacyHero from '../components/LegacyHero';
+import ScrollReveal from '../components/ScrollReveal';
 import ShinyText from '../components/ShinyText';
+import TimelineSection from '../components/TimelineSection';
+import WorksShowcase from '../components/WorksShowcase';
 
-import ShortFilmsSection from '../components/ShortFilmsSection';
-import WebSeriesSection from '../components/WebSeriesSection';
-import TvProgramsSection from '../components/TvProgramsSection';
-import MoviesSection from '../components/MoviesSection';
 import IndependentWorksSection from '../components/IndependentWorksSection';
+import MoviesSection from '../components/MoviesSection';
+import ShortFilmsSection from '../components/ShortFilmsSection';
+import TvProgramsSection from '../components/TvProgramsSection';
+import WebSeriesSection from '../components/WebSeriesSection';
 
 export default function Home({ 
   songs, 
@@ -79,10 +79,10 @@ export default function Home({
   // Helper to extract YouTube ID
   const getYoutubeId = (url) => {
     if (!url) return '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^(?:.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=))([^#&?]{11}).*/;
     const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : '';
-  };
+    return (match && match[1] && match[1].length === 11) ? match[1] : '';
+  }
 
   // Get absolute API url for uploaded static files
   const getAssetUrl = (url) => {

@@ -1,13 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import WorksShowcase from '../components/WorksShowcase';
-import ShortFilmsSection from '../components/ShortFilmsSection';
-import WebSeriesSection from '../components/WebSeriesSection';
-import TvProgramsSection from '../components/TvProgramsSection';
-import MoviesSection from '../components/MoviesSection';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import IndependentWorksSection from '../components/IndependentWorksSection';
+import MoviesSection from '../components/MoviesSection';
 import ShinyText from '../components/ShinyText';
+import ShortFilmsSection from '../components/ShortFilmsSection';
+import TvProgramsSection from '../components/TvProgramsSection';
+import WebSeriesSection from '../components/WebSeriesSection';
+import WorksShowcase from '../components/WorksShowcase';
 
 export default function WorksPage({ 
   songs, 
@@ -49,10 +49,10 @@ export default function WorksPage({
   // Helper to extract YouTube ID
   const getYoutubeId = (url) => {
     if (!url) return '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^(?:.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=))([^#&?]{11}).*/;
     const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : '';
-  };
+    return (match && match[1] && match[1].length === 11) ? match[1] : '';
+  }
 
   // Get absolute API url for uploaded static files
   const getAssetUrl = (url) => {

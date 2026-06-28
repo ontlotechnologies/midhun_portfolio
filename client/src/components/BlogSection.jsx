@@ -103,8 +103,6 @@ export default function BlogSection({ blogs, loading, onBlogClick }) {
                   <div className="flex flex-wrap items-center gap-1 sm:gap-2 text-[8px] sm:text-[9px] text-gray-500 uppercase tracking-wider mb-1.5 sm:mb-2 font-mono font-semibold">
                     <span>{new Date(blog.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                     <span className="hidden xs:inline">&bull;</span>
-                    <span className="flex items-center"><Clock size={9} className="mr-0.5" /> {blog.readingTime}</span>
-                    <span className="hidden xs:inline">&bull;</span>
                     <span className="flex items-center text-slate-500"><Eye size={9} className="mr-0.5 text-gold-500" /> {blog.views || 0}</span>
                   </div>
 

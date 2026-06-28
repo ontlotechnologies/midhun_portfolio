@@ -64,7 +64,7 @@ router.post('/upload', authMiddleware, upload.single('file'), async (req, res) =
 
     const localFilePath = req.file.path;
     const ext = path.extname(req.file.originalname).toLowerCase();
-    
+
     let resourceType = 'auto';
     let assetType = 'other';
 
@@ -235,7 +235,7 @@ router.post('/blogs', authMiddleware, async (req, res) => {
 
     const { title } = req.body;
     let slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    
+
     // Ensure unique slug
     let existing = await Blog.findOne({ slug });
     let count = 1;
@@ -500,8 +500,8 @@ router.put('/messages/:id', authMiddleware, async (req, res) => {
   try {
 
     const message = await ContactMessage.findByIdAndUpdate(
-      req.params.id, 
-      { status: 'read' }, 
+      req.params.id,
+      { status: 'read' },
       { new: true }
     );
     if (!message) return res.status(404).json({ success: false, message: 'Message not found' });
@@ -542,7 +542,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
     // Calculate dynamic visitor metrics for the last 5 days
     const dailyVisits = [];
     const today = new Date();
-    
+
     for (let i = 4; i >= 0; i--) {
       const start = new Date();
       start.setDate(today.getDate() - i);

@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Clock, Eye, Share2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowLeft, Eye, Share2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import ShinyText from '../components/ShinyText';
 
 export default function BlogDetailPage({ blog, onBackClick, loading }) {
@@ -103,7 +102,7 @@ export default function BlogDetailPage({ blog, onBackClick, loading }) {
         </div>
 
         {/* Blog Article Outer Container */}
-        <div className="bg-cream-200/50 border border-cream-300/60 rounded overflow-hidden shadow-sm">
+        <div className="bg-cream-200 border border-cream-300/60 rounded overflow-hidden shadow-sm">
           
           {/* Cover Banner */}
           {blog.coverUrl && (
@@ -124,8 +123,6 @@ export default function BlogDetailPage({ blog, onBackClick, loading }) {
             </h1>
             <div className="flex flex-wrap items-center gap-2.5 text-[10px] text-gray-500 uppercase tracking-widest font-mono border-b border-cream-300 pb-5">
               <span>{new Date(blog.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-              <span>&bull;</span>
-              <span className="flex items-center"><Clock size={11} className="mr-1" /> {blog.readingTime} read</span>
               <span>&bull;</span>
               <span className="flex items-center text-slate-500"><Eye size={11} className="mr-1 text-gold-500" /> {blog.views || 0} views</span>
             </div>
@@ -148,9 +145,9 @@ export default function BlogDetailPage({ blog, onBackClick, loading }) {
           <div className="border-t border-cream-300 p-6 bg-cream-300/30 flex items-center justify-between">
             <div className="flex items-center space-x-3 text-left">
               <div className="w-10 h-10 rounded-full border border-gold-500/20 overflow-hidden bg-neutral-200">
-                <img 
-                  src="data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"0 0 100 100\"><rect width=\"100%\" height=\"100%\" fill=\"%23b89033\"/><text x=\"50%\" y=\"55%\" dominant-baseline=\"middle\" text-anchor=\"middle\" font-family=\"serif\" font-size=\"40\" font-weight=\"bold\" fill=\"%23ffffff\">M</text></svg>" 
-                  alt="Midhun Saji Ram" 
+                <img
+                  src={`data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100%" height="100%" fill="#b89033"/><text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-family="serif" font-size="40" font-weight="bold" fill="#ffffff">M</text></svg>')}`}
+                  alt="Midhun Saji Ram"
                   className="w-full h-full object-cover"
                 />
               </div>

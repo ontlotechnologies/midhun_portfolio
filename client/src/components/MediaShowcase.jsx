@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
-import ShortFilmsSection from './ShortFilmsSection';
-import WebSeriesSection from './WebSeriesSection';
-import TvProgramsSection from './TvProgramsSection';
-import MoviesSection from './MoviesSection';
 import IndependentWorksSection from './IndependentWorksSection';
+import MoviesSection from './MoviesSection';
+import ShortFilmsSection from './ShortFilmsSection';
+import TvProgramsSection from './TvProgramsSection';
+import WebSeriesSection from './WebSeriesSection';
 
 export default function MediaShowcase({ mediaWorks }) {
   const [activeVideo, setActiveVideo] = useState(null); // { id, mediaType, url }
@@ -20,9 +20,9 @@ export default function MediaShowcase({ mediaWorks }) {
   // Helper to extract YouTube ID
   const getYoutubeId = (url) => {
     if (!url) return '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^(?:.*(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=))([^#&?]{11}).*/;
     const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : '';
+    return (match && match[1] && match[1].length === 11) ? match[1] : '';
   };
 
   // Get absolute API url for uploaded static files

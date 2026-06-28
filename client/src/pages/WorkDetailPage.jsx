@@ -237,9 +237,9 @@ export default function WorkDetailPage({ song, onBackClick, onPlayClick, current
                 </div>
               </div>
 
-              <span className="text-[10px] text-gray-500 font-bold font-sans self-end mb-0.5">
+              {/* <span className="text-[10px] text-gray-500 font-bold font-sans self-end mb-0.5">
                 03:45
-              </span>
+              </span> */}
             </div>
 
             {/* Credits List */}

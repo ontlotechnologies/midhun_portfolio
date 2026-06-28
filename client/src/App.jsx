@@ -1,19 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { AnimatePresence, useScroll, useSpring, useTransform, motion } from 'framer-motion';
-import Navbar from './components/Navbar';
-import AudioPlayer from './components/AudioPlayer';
-import Home from './pages/Home';
-import AboutPage from './pages/AboutPage';
-import WorksPage from './pages/WorksPage';
-import BlogPage from './pages/BlogPage';
-import GalleryPage from './pages/GalleryPage';
-import ContactPage from './pages/ContactPage';
-import WorkDetailPage from './pages/WorkDetailPage';
-import BlogDetailPage from './pages/BlogDetailPage';
-import CustomCursor from './components/CustomCursor';
-import { Disc, Sparkles } from 'lucide-react';
+import { AnimatePresence, motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import Lenis from 'lenis';
-import { FaSpotify, FaYoutube, FaInstagram } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+import { FaInstagram, FaSpotify, FaYoutube } from 'react-icons/fa';
+import AudioPlayer from './components/AudioPlayer';
+import CustomCursor from './components/CustomCursor';
+import Navbar from './components/Navbar';
+import AboutPage from './pages/AboutPage';
+import BlogDetailPage from './pages/BlogDetailPage';
+import BlogPage from './pages/BlogPage';
+import ContactPage from './pages/ContactPage';
+import GalleryPage from './pages/GalleryPage';
+import Home from './pages/Home';
+import WorkDetailPage from './pages/WorkDetailPage';
+import WorksPage from './pages/WorksPage';
 
 export default function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -336,7 +335,7 @@ export default function App() {
                 isAudioLoading={isAudioLoading}
               />
             );
-          case '/work-detail':
+          case '/work-detail': {
             const queryParams = new URLSearchParams(window.location.search);
             const songId = queryParams.get('id') || selectedWorkId;
             const detailedSong = songs.find(s => s._id === songId) || songs[0];
@@ -358,9 +357,10 @@ export default function App() {
                 isAudioLoading={isAudioLoading}
               />
             );
+          }
           case '/blog':
             return <BlogPage blogs={blogs} loading={loading} navigate={navigate} />;
-          case '/blog-detail':
+          case '/blog-detail': {
             const blogQueryParams = new URLSearchParams(window.location.search);
             const blogId = blogQueryParams.get('id');
             const detailedBlog = blogs.find(b => b._id === blogId);
@@ -371,6 +371,7 @@ export default function App() {
                 loading={loading}
               />
             );
+          }
           case '/gallery':
             return <GalleryPage gallery={gallery} loading={loading} />;
           case '/contact':
